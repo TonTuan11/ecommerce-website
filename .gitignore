@@ -1,0 +1,19 @@
+# Maven build
+target/
+
+# IDE
+.idea/
+*.iml
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Runtime files
+uploads/
+
+# Secret config
+src/main/resources/application.yml
