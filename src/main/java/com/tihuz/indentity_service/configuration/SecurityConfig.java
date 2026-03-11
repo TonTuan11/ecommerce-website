@@ -1,21 +1,16 @@
 package com.tihuz.indentity_service.configuration;
 
-
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-
 import lombok.experimental.FieldDefaults;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
@@ -24,9 +19,9 @@ import org.springframework.web.cors.CorsConfigurationSource;
 
 @FieldDefaults(level = AccessLevel.PRIVATE,makeFinal = true )
 @Configuration // annotation đánh dấu class là nơi định nghĩa cấu hình, method có @Bean đăng ký chúng vào ApplicationContext.
-@EnableWebSecurity  // annotation này Kích hoạt Spring Security trong ứng dụng.
+@EnableWebSecurity  // This annotation enables Spring Security in the application.
 @EnableMethodSecurity  // annotaion để phân quyền ở tầng method (Preauthorize, Pos,..)
-@RequiredArgsConstructor     //chỉ inject các field final
+@RequiredArgsConstructor
 
 
 /*Cấu hình chi tiết cho Spring Security, bao gồm:
@@ -43,40 +38,30 @@ public class SecurityConfig {
 
     // Các endpoint cho phép truy cập công khai (không cần xác thực) với phương thức POST.
     private final String[] PUBLIC_ENDPOINTS={ "/auth/**",};
+    private final String[] PUBLIC_ENDPOINTS_GET={ "/products/**","/categories/**","/brands/**"};
     @Autowired
     private CorsConfigurationSource corsConfigurationSource;
 
-
     private JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
-
     private CustomJwtDecoder customJwtDecoder;
 
 
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception
+    {
 
         httpSecurity
-
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
 
                 // API thuần JSON → tắt CSRF
                 .csrf(AbstractHttpConfigurer::disable)
 
-
                 // Cấu hình phân quyền truy cập
                 .authorizeHttpRequests(request-> request
-
-                        // Cho phép public POST tới các endpoint trong PUBLIC_ENDPOINTS
                         .requestMatchers(HttpMethod.POST,PUBLIC_ENDPOINTS).permitAll()
-
-                        // public API
-                        .requestMatchers(HttpMethod.GET, "/products/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/categories/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/brands/**").permitAll()
-
+                        .requestMatchers(HttpMethod.GET,PUBLIC_ENDPOINTS_GET).permitAll()
                         .requestMatchers("/uploads/**").permitAll()
-
                         // swagger
                         .requestMatchers(
                                 "/auth/**",
@@ -84,34 +69,26 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/swagger-ui.html"
                         ).permitAll()
-
-                                // Chỉ cho phép user có role ADMIN được GET /users
-                              //  .requestMatchers(HttpMethod.GET, "/users").hasRole(Role.ADMIN.name())
-
-                                // Các request khác đều cần xác thực (đăng nhập)
+                        // All other requests require authentication (login).
                         .anyRequest().authenticated());
 
 
         // Cấu hình ứng dụng thành OAuth2 Resource Server, dùng JWT làm phương thức xác thực
         // Thiết lập decoder để giải mã token JWT và converter để chuyển đổi scope thành authorities
-        httpSecurity.oauth2ResourceServer(oauth2 -> oauth2
-                        .jwt(jwtConfigurer -> jwtConfigurer
-                                .decoder(customJwtDecoder)  //giải mã & kiểm tra token.
+        httpSecurity.oauth2ResourceServer
+                (oauth2 -> oauth2
+                        .jwt(
+                                jwtConfigurer -> jwtConfigurer
+                                             .decoder(customJwtDecoder)  //Decode and validate the token.
+                                             .jwtAuthenticationConverter(jwtAuthenticationConverter())) //convert Jwt → Authentication (quyền/authorities).
 
-                                .jwtAuthenticationConverter(jwtAuthenticationConverter())) // sẽ chuyển Jwt → Authentication (quyền/authorities).
-
-                        //gọi JwtAuthenticationEntryPoint → khi có lỗi xác thực trả 401 Unauthorized.
+                        //Call JwtAuthenticationEntryPoint → Return 401 Unauthorized when authentication fails.
                         .authenticationEntryPoint( jwtAuthenticationEntryPoint)
-
-
-        );
-
-
-
-
-        // Trả về cấu hình đã xây dựng
+                );
+        // Return the built configuration.
         return httpSecurity.build();
     }
+
 
 
 
@@ -133,7 +110,6 @@ public class SecurityConfig {
 
         // Sử dụng converter trên để chuyển đổi các scope thành authority
         jwtAuthConverter .setJwtGrantedAuthoritiesConverter(converter);
-
         return  jwtAuthConverter ;
 
     }

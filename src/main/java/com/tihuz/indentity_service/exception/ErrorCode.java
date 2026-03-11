@@ -19,6 +19,7 @@ public enum ErrorCode  {
     INVALID_KEY ("Invalid message key",1001,HttpStatus.BAD_REQUEST),
     UNCATEGORIZED_EXCEPTION("uncategorized exception",4444, HttpStatus.INTERNAL_SERVER_ERROR),
     USER_EXISTED("User existed",1002,HttpStatus.BAD_REQUEST),
+    FAIL_PASSWORD("Password fail",2002,HttpStatus.BAD_REQUEST),
 
     // Transactionrequest
     TRANSACTION_EXCEPTION("transaction exception",55555, HttpStatus.INTERNAL_SERVER_ERROR),

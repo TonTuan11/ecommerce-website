@@ -337,7 +337,7 @@ public class CategoryService {
         List<Category> children=categoryRepository.findByParentId(currentId); // lấy ra con của currentId
         for (Category child:children)
         {
-            traverseCategoryTree(child.getId(),result);
+            traverseCategoryTree(child.getId(),result);  // đệ quy
         }
 
     }

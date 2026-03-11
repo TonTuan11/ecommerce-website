@@ -6,7 +6,7 @@ import lombok.Setter;
 import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
-import java.util.List;
+
 
 @Getter
 @Setter

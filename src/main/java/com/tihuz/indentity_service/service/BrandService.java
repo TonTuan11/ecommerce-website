@@ -19,7 +19,6 @@ import java.util.List;
 
 @RequiredArgsConstructor
 @Service
-
 @FieldDefaults(level = AccessLevel.PRIVATE,makeFinal = true)
 public class BrandService {
 

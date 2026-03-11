@@ -1,320 +1,285 @@
-                                                                                                                                                                                                                                                                                                                                        package com.tihuz.indentity_service.service;
+package com.tihuz.indentity_service.service;
+
+import com.nimbusds.jose.*;
+import com.nimbusds.jose.crypto.MACSigner;
+import com.nimbusds.jose.crypto.MACVerifier;
+import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.SignedJWT;
+import com.tihuz.indentity_service.dto.request.AuthenticationRequest;
+import com.tihuz.indentity_service.dto.request.IntrospectRequest;
+import com.tihuz.indentity_service.dto.request.LogoutRequest;
+import com.tihuz.indentity_service.dto.request.RefreshRequest;
+import com.tihuz.indentity_service.dto.response.AuthenticationResponse;
+import com.tihuz.indentity_service.dto.response.IntrospectResponse;
+import com.tihuz.indentity_service.entity.InvalidatedToken;
+import com.tihuz.indentity_service.entity.User;
+import com.tihuz.indentity_service.exception.AppException;
+import com.tihuz.indentity_service.exception.ErrorCode;
+import com.tihuz.indentity_service.repository.InvalidatedTokenRepository;
+import com.tihuz.indentity_service.repository.UserRepository;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import lombok.experimental.FieldDefaults;
+import lombok.experimental.NonFinal;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
+
+import java.text.ParseException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Date;
+import java.util.StringJoiner;
+import java.util.UUID;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+
+/*
+Handle authentication and JWT token management:
+        - Authenticate username/password (password is hashed).
+        - Generate a JWT on successful login (include roles in the token).
+        - Validate the token and check expiration.
+        */
+public class AuthenticationService {
+
+
+    UserRepository userRepository;   // thao tác user
+
+    PasswordEncoder passwordEncoder;   // so khớp password
+
+    InvalidatedTokenRepository invalidatedTokenRepository;   // bảng blacklist jti
+
+    // annotation lombok ( để không inject vào contructor)
+    @NonFinal
+
+    // annotation đọc biến từ file yml
+    @Value("${jwt.signerKey}")
+    protected String SIGNER_KEY;   // khóa HMAC HS512
+
+    @NonFinal
+    @Value("${jwt.valid-duration}")
+    protected long VALID_DURATION;
+
+    @NonFinal
+    @Value("${jwt.refreshable-duration}")
+    protected long REFRESH_DURATION;
+
+
+    public IntrospectResponse introspectResponse(IntrospectRequest request)
+            throws JOSEException, ParseException
+    {
+        var token = request.getToken();
+        boolean isValid = true;
+
+        try
+        {
+            // Use the verifyToken method
+            verifyToken(token, false);
+        }
+        catch (AppException e)
+        {
+            isValid = false;
+        }
+
+        return IntrospectResponse.builder()
+                .valid(isValid)
+                .build();
+    }
+
+    // Login -> create token
+    public AuthenticationResponse authenticate(AuthenticationRequest request)
+    {
+        var user = userRepository.findByUsername(request.getUsername())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOTEXISTED));
+
+        // check password
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword()))
+        {
+            throw new AppException(ErrorCode.FAIL_PASSWORD);
+        }
+        // Create token for the user
+        var token = generateToken(user);
 
+        return AuthenticationResponse.builder()
+                .token(token)
+                .authenticated(true)
+                .build();
 
+    }
 
-                                                                                                                                                                                                                                                                                                                                        import com.nimbusds.jose.*;
-                                                                                                                                                                                                                                                                                                                                        import com.nimbusds.jose.crypto.MACSigner;
-                                                                                                                                                                                                                                                                                                                                        import com.nimbusds.jose.crypto.MACVerifier;
-                                                                                                                                                                                                                                                                                                                                        import com.nimbusds.jwt.JWTClaimsSet;
-                                                                                                                                                                                                                                                                                                                                        import com.nimbusds.jwt.SignedJWT;
-                                                                                                                                                                                                                                                                                                                                        import com.tihuz.indentity_service.configuration.PasswordConfig;
-                                                                                                                                                                                                                                                                                                                                        import com.tihuz.indentity_service.dto.request.AuthenticationRequest;
-                                                                                                                                                                                                                                                                                                                                        import com.tihuz.indentity_service.dto.request.IntrospectRequest;
-                                                                                                                                                                                                                                                                                                                                        import com.tihuz.indentity_service.dto.request.LogoutRequest;
-                                                                                                                                                                                                                                                                                                                                        import com.tihuz.indentity_service.dto.request.RefreshRequest;
-                                                                                                                                                                                                                                                                                                                                        import com.tihuz.indentity_service.dto.response.AuthenticationResponse;
-                                                                                                                                                                                                                                                                                                                                        import com.tihuz.indentity_service.dto.response.IntrospectResponse;
-                                                                                                                                                                                                                                                                                                                                        import com.tihuz.indentity_service.entity.InvalidatedToken;
-                                                                                                                                                                                                                                                                                                                                        import com.tihuz.indentity_service.entity.User;
-                                                                                                                                                                                                                                                                                                                                        import com.tihuz.indentity_service.exception.AppException;
-                                                                                                                                                                                                                                                                                                                                        import com.tihuz.indentity_service.exception.ErrorCode;
-                                                                                                                                                                                                                                                                                                                                        import com.tihuz.indentity_service.repository.InvalidatedTokenRepository;
-                                                                                                                                                                                                                                                                                                                                        import com.tihuz.indentity_service.repository.UserRepository;
-                                                                                                                                                                                                                                                                                                                                        import lombok.AccessLevel;
-                                                                                                                                                                                                                                                                                                                                        import lombok.RequiredArgsConstructor;
-                                                                                                                                                                                                                                                                                                                                        import org.springframework.beans.factory.annotation.Value;
-                                                                                                                                                                                                                                                                                                                                        import lombok.experimental.FieldDefaults;
-                                                                                                                                                                                                                                                                                                                                        import lombok.experimental.NonFinal;
-                                                                                                                                                                                                                                                                                                                                        import lombok.extern.slf4j.Slf4j;
-                                                                                                                                                                                                                                                                                                                                        import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-                                                                                                                                                                                                                                                                                                                                        import org.springframework.security.crypto.password.PasswordEncoder;
-                                                                                                                                                                                                                                                                                                                                        import org.springframework.stereotype.Service;
-                                                                                                                                                                                                                                                                                                                                        import org.springframework.util.CollectionUtils;
 
-                                                                                                                                                                                                                                                                                                                                        import java.text.ParseException;
-                                                                                                                                                                                                                                                                                                                                        import java.time.Instant;
-                                                                                                                                                                                                                                                                                                                                        import java.time.temporal.ChronoUnit;
-                                                                                                                                                                                                                                                                                                                                        import java.util.Date;
-                                                                                                                                                                                                                                                                                                                                        import java.util.StringJoiner;
-                                                                                                                                                                                                                                                                                                                                        import java.util.UUID;
+    //  Logout: Extract jti and exp → store in blacklist (InvalidatedToken).
+    public void logout(LogoutRequest request) throws ParseException, JOSEException
+    {
+        try
+        {
+            var signToken = verifyToken(request.getToken(), true);  // sẽ ném nếu invalid/expired/revoked
 
-                                                                                                                                                                                                                                                                                                                                        @Slf4j
-                                                                                                                                                                                                                                                                                                                                        @Service
-                                                                                                                                                                                                                                                                                                                                        @RequiredArgsConstructor
-                                                                                                                                                                                                                                                                                                                                        @FieldDefaults(level = AccessLevel.PRIVATE,makeFinal = true)
+            // Extract the JWTID (jti) from the token
+            String jit = signToken.getJWTClaimsSet().getJWTID();
 
+            // Extract expirationTime (exp) from the token
+            Date expiryTime = signToken.getJWTClaimsSet().getExpirationTime();
 
+            // build entity InvalidatedToken
+            InvalidatedToken invalidatedToken = InvalidatedToken
+                                                    .builder()
+                                                    .id(jit)
+                                                    .expiryTime(expiryTime)
+                                                    .build();
 
-                                                                                                                                                                                                                                                                                                                                        /*
-                                                                                                                                                                                                                                                                                                                                         Xử lý đăng nhập, tạo và kiểm tra token JWT cho user:
+            // lưu vào repo
+            invalidatedTokenRepository.save(invalidatedToken);
 
-                                                                                                                                                                                                                                                                                                                                          -Xác thực username/password (mã hóa password).
+        }
+        catch (AppException e)
+        {
+            log.info("Token already expired");
+        }
+    }
 
-                                                                                                                                                                                                                                                                                                                                          -Tạo token JWT khi đăng nhập thành công (kèm thông tin roles trong token).
 
-                                                                                                                                                                                                                                                                                                                                          -Kiểm tra token có hợp lệ, chưa hết hạn.
-                                                                                                                                                                                                                                                                                                                                        */
+    //Refresh Token
+    public AuthenticationResponse refreshToken(RefreshRequest request)
+            throws ParseException, JOSEException {
 
+        var signJwt = verifyToken(request.getToken(), true); // nếu lấy ra được thì token còn hiệu thực
+        var jit = signJwt.getJWTClaimsSet().getJWTID();
+        var expiryTime = signJwt.getJWTClaimsSet().getExpirationTime();
 
-                                                                                                                                                                                                                                                                                                                                            public class AuthenticationService {
+        // thu hồi token, vô hiệu hóa (như cơ chế logout)
+        InvalidatedToken invalidatedToken = InvalidatedToken.builder()
+                .id(jit)
+                .expiryTime(expiryTime)
+                .build();
 
-                                                                                                                                                                                                                                                                                                                                             UserRepository userRepository;   // thao tác user
+        invalidatedTokenRepository.save(invalidatedToken);
 
-                                                                                                                                                                                                                                                                                                                                             PasswordEncoder passwordEncoder;   // so khớp password
+        //tìm theo  username
+        //        var username=signJwt.getJWTClaimsSet().getSubject();
+        //
+        //
+        //        var user=userRepository.findByUsername(username)
+        //                .orElseThrow(
+        //                        () -> new AppException(ErrorCode.UNAUTHENTICATED)
+        //                );
 
-                                                                                                                                                                                                                                                                                                                                             InvalidatedTokenRepository invalidatedTokenRepository;   // bảng blacklist jti
 
-                                                                                                                                                                                                                                                                                                                                            // annotation lombok ( để không inject vào contructor)
-                                                                                                                                                                                                                                                                                                                                            @NonFinal
+        //tìm theo userId
 
-                                                                                                                                                                                                                                                                                                                                            // annotation đọc biến từ file yml
-                                                                                                                                                                                                                                                                                                                                            @Value("${jwt.signerKey}")
-                                                                                                                                                                                                                                                                                                                                            protected  String SIGNER_KEY;   // khóa HMAC HS512
+        var userid = signJwt.getJWTClaimsSet().getSubject();
 
-                                                                                                                                                                                                                                                                                                                                            @NonFinal
-                                                                                                                                                                                                                                                                                                                                            @Value("${jwt.valid-duration}")
-                                                                                                                                                                                                                                                                                                                                            protected  long VALID_DURATION;
+        var user = userRepository.findById(userid)
+                .orElseThrow(
+                        () -> new AppException(ErrorCode.UNAUTHENTICATED)
+                );
 
-                                                                                                                                                                                                                                                                                                                                            @NonFinal
-                                                                                                                                                                                                                                                                                                                                            @Value("${jwt.refreshable-duration}")
-                                                                                                                                                                                                                                                                                                                                            protected  long REFRESH_DURATION;
+        // tạo token cho user qua hàm generateToken
+        var token = generateToken(user);
 
 
-                                                                                                                                                                                                                                                                                                                                            public IntrospectResponse introspectResponse(IntrospectRequest request)
-                                                                                                                                                                                                                                                                                                                                                    throws JOSEException, ParseException {
+        // trả về và build
+        return AuthenticationResponse.builder()
+                .token(token)
+                .authenticated(true)
+                .build();
 
-                                                                                                                                                                                                                                                                                                                                                //  Introspect: hợp lệ khi chữ ký đúng, chưa hết hạn, và CHƯA bị revoke
 
-                                                                                                                                                                                                                                                                                                                                                var token= request.getToken();
+    }
 
-                                                                                                                                                                                                                                                                                                                                                boolean isValid= true;
 
-                                                                                                                                                                                                                                                                                                                                                try {
-                                                                                                                                                                                                                                                                                                                                                    // gọi verifyToken
-                                                                                                                                                                                                                                                                                                                                                    verifyToken(token,false);
+    //  Verify: chữ ký đúng + chưa hết hạn + chưa bị revoke
+    private SignedJWT verifyToken(String token, boolean isRefresh)
+            throws JOSEException, ParseException {
 
-                                                                                                                                                                                                                                                                                                                                                } catch (AppException e) {
-                                                                                                                                                                                                                                                                                                                                                    // nếu lỗi ném AppException → valid=false.
-                                                                                                                                                                                                                                                                                                                                                    isValid= false;
-                                                                                                                                                                                                                                                                                                                                                }
+        //Create verifier token
+        JWSVerifier verifier = new MACVerifier(SIGNER_KEY.getBytes());
 
+        //Parse the token string ->  SignedJWT object.
+        SignedJWT signedJWT = SignedJWT.parse(token);
 
-                                                                                                                                                                                                                                                                                                                                                return IntrospectResponse.builder()
-                                                                                                                                                                                                                                                                                                                                                        .valid(isValid)
-                                                                                                                                                                                                                                                                                                                                                        .build();
-                                                                                                                                                                                                                                                                                                                                            }
+        // Lấy claim expiration
+        Date expiryTime = (isRefresh)
+                ? new Date(signedJWT.getJWTClaimsSet().getIssueTime()
+                .toInstant().plus(REFRESH_DURATION, ChronoUnit.SECONDS).toEpochMilli())
+                : signedJWT.getJWTClaimsSet().getExpirationTime();
 
 
-                                                                                                                                                                                                                                                                                                                                            // xác thực user/pass → tạo JWT có jti, exp, và scope (gồm ROLE_... + permissions).
-                                                                                                                                                                                                                                                                                                                                            // Authenticate: kiểm tra username/password và trả token
-                                                                                                                                                                                                                                                                                                                                            //  Đăng nhập: check password, phát hành JWT 1h
-                                                                                                                                                                                                                                                                                                                                           public AuthenticationResponse authenticate(AuthenticationRequest request) {
-                                                                                                                                                                                                                                                                                                                                               var user = userRepository.findByUsername(request.getUsername())
-                                                                                                                                                                                                                                                                                                                                                       .orElseThrow(() -> new AppException(ErrorCode.USER_NOTEXISTED));
+        var verified = signedJWT.verify(verifier); // check sign HMAC
 
+        if (!verified || expiryTime.before(new Date()))
+            throw new AppException(ErrorCode.UNAUTHENTICATED); // Invalid signature or expired ->fail
 
-                                                                                                                                                                                                                                                                                                                                               // Đã có Bean PasswordEncoder  inject vào sử dụng
-                                                                                                                                                                                                                                                                                                                                               if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-                                                                                                                                                                                                                                                                                                                                                   throw new AppException(ErrorCode.UNAUTHENTICATED);
-                                                                                                                                                                                                                                                                                                                                               }
+        // If the jti is revoked → fail
+        if (invalidatedTokenRepository
+                .existsById(signedJWT.getJWTClaimsSet().getJWTID()))
+            throw new AppException(ErrorCode.UNAUTHENTICATED);
 
-                                                                                                                                                                                                                                                                                                                                               // tạo token cho user qua hàm generateToken
-                                                                                                                                                                                                                                                                                                                                               var token=generateToken(user);
+        return signedJWT;
+    }
 
 
-                                                                                                                                                                                                                                                                                                                                               // trả về và build
-                                                                                                                                                                                                                                                                                                                                               return AuthenticationResponse.builder()
-                                                                                                                                                                                                                                                                                                                                                       .token(token)
-                                                                                                                                                                                                                                                                                                                                                       .authenticated(true)
-                                                                                                                                                                                                                                                                                                                                                       .build();
+    // Create token JWT (SignedJWT with HS512) , có jti/exp/issuer/scope
+    private String generateToken(User user) {
 
-                                                                                                                                                                                                                                                                                                                                           }
+        // Use the HMAC-SHA-512 hashing algorithm.
+        JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
 
 
-                                                                                                                                                                                                                                                                                                                                           //  Logout: lấy jti & exp của token → lưu vào blacklist (InvalidatedToken)
-                                                                                                                                                                                                                                                                                                                                            public  void logout(LogoutRequest request) throws ParseException, JOSEException {
+        // Claims
+        JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
+                .subject(user.getId())   //  ID user //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                .issuer("tihuz.com")
+                .issueTime(new Date())
+                .expirationTime(Date.from(Instant.now().plus(VALID_DURATION, ChronoUnit.SECONDS)))  // Expire after VALID_DURATION (seconds)
+                .jwtID(UUID.randomUUID().toString())  //jti is used for revocation.
+                .claim("scope", buildScope(user)) // User role and permissions.
+                .build();
 
-                                                                                                                                                                                                                                                                                                                                               try {
-                                                                                                                                                                                                                                                                                                                                                   var signToken = verifyToken(request.getToken(), true);  // sẽ ném nếu invalid/expired/revoked
 
+        // Create Payload (body token)
+        Payload payload = new Payload(jwtClaimsSet.toJSONObject());
 
-                                                                                                                                                                                                                                                                                                                                                   // lấy JWTID đã thêm vào khi tạo Payload trong token (verifyToken)
-                                                                                                                                                                                                                                                                                                                                                   String jit = signToken.getJWTClaimsSet().getJWTID();
+        // Pack the header and payload into a JWSObject.
+        JWSObject jwsObject = new JWSObject(header,payload);
 
-                                                                                                                                                                                                                                                                                                                                                   // lấy expirationTime đã thêm vào khi tạo Payload trong token (verifyToken)
-                                                                                                                                                                                                                                                                                                                                                   Date expiryTime = signToken.getJWTClaimsSet().getExpirationTime();
+        // Sign the token
+        try {
+            // Create a MACSigner, Sign with SIGNER_KEY.
+            jwsObject.sign(new MACSigner(SIGNER_KEY.getBytes()));
 
-                                                                                                                                                                                                                                                                                                                                                   // build entity InvalidatedToken
-                                                                                                                                                                                                                                                                                                                                                   InvalidatedToken invalidatedToken = InvalidatedToken.builder()
-                                                                                                                                                                                                                                                                                                                                                           .id(jit)
-                                                                                                                                                                                                                                                                                                                                                           .expiryTime(expiryTime)
-                                                                                                                                                                                                                                                                                                                                                           .build();
+            // Convert JWT ( header, payload, signature) -> Compact Serialization (3 phần nối bằng dấu chấm)
+            // This string is JWT token, returned to the client or used for authentication.
+            return jwsObject.serialize();
 
-                                                                                                                                                                                                                                                                                                                                                   // lưu vào repo
-                                                                                                                                                                                                                                                                                                                                                   invalidatedTokenRepository.save(invalidatedToken);
+        } catch (
+                JOSEException e) {
+            log.error("Can not create token");
+            throw new RuntimeException(e);
+        }
+    }
 
-                                                                                                                                                                                                                                                                                                                                               } catch (AppException e) {
-                                                                                                                                                                                                                                                                                                                                                  log.info("Token already expired");
-                                                                                                                                                                                                                                                                                                                                               }
-                                                                                                                                                                                                                                                                                                                                            }
 
+    // Lấy tập hợp roles ( nối thành 1 chuỗi cách nhau bởi khoảng trắng )
+    private String buildScope(User user) {
 
-                                                                                                                                                                                                                                                                                                                                            //Refresh Token
-                                                                                                                                                                                                                                                                                                                                            public AuthenticationResponse refreshToken(RefreshRequest request)
-                                                                                                                                                                                                                                                                                                                                                    throws ParseException, JOSEException {
+        StringJoiner stringJoiner = new StringJoiner(" ");
 
-                                                                                                                                                                                                                                                                                                                                                var signJwt=verifyToken(request.getToken(),true); // nếu lấy ra được thì token còn hiệu thực
-
-                                                                                                                                                                                                                                                                                                                                                var jit=signJwt.getJWTClaimsSet().getJWTID();
-                                                                                                                                                                                                                                                                                                                                                var expiryTime= signJwt.getJWTClaimsSet().getExpirationTime();
-
-
-                                                                                                                                                                                                                                                                                                                                                // thu hồi token, vô hiệu hóa (như cơ chế logout)
-                                                                                                                                                                                                                                                                                                                                                InvalidatedToken invalidatedToken=InvalidatedToken.builder()
-                                                                                                                                                                                                                                                                                                                                                        .id(jit)
-                                                                                                                                                                                                                                                                                                                                                        .expiryTime(expiryTime)
-                                                                                                                                                                                                                                                                                                                                                        .build();
-
-                                                                                                                                                                                                                                                                                                                                                invalidatedTokenRepository.save(invalidatedToken);
-
-                                                                                                                                                                                                                                                                                                                                                //tìm theo  username
-                                                                                                                                                                                                                                                                                                                                        //        var username=signJwt.getJWTClaimsSet().getSubject();
-                                                                                                                                                                                                                                                                                                                                        //
-                                                                                                                                                                                                                                                                                                                                        //
-                                                                                                                                                                                                                                                                                                                                        //        var user=userRepository.findByUsername(username)
-                                                                                                                                                                                                                                                                                                                                        //                .orElseThrow(
-                                                                                                                                                                                                                                                                                                                                        //                        () -> new AppException(ErrorCode.UNAUTHENTICATED)
-                                                                                                                                                                                                                                                                                                                                        //                );
-
-
-                                                                                                                                                                                                                                                                                                                                                //tìm theo userId
-
-                                                                                                                                                                                                                                                                                                                                              var userid=signJwt.getJWTClaimsSet().getSubject();
-
-                                                                                                                                                                                                                                                                                                                                                var user=userRepository.findById(userid)
-                                                                                                                                                                                                                                                                                                                                                        .orElseThrow(
-                                                                                                                                                                                                                                                                                                                                                                () -> new AppException(ErrorCode.UNAUTHENTICATED)
-                                                                                                                                                                                                                                                                                                                                                        );
-
-                                                                                                                                                                                                                                                                                                                                                // tạo token cho user qua hàm generateToken
-                                                                                                                                                                                                                                                                                                                                                var token=generateToken(user);
-
-
-                                                                                                                                                                                                                                                                                                                                                // trả về và build
-                                                                                                                                                                                                                                                                                                                                                return AuthenticationResponse.builder()
-                                                                                                                                                                                                                                                                                                                                                        .token(token)
-                                                                                                                                                                                                                                                                                                                                                        .authenticated(true)
-                                                                                                                                                                                                                                                                                                                                                        .build();
-
-
-                                                                                                                                                                                                                                                                                                                                            }
-
-
-                                                                                                                                                                                                                                                                                                                                            //  Verify: chữ ký đúng + chưa hết hạn + chưa bị revoke
-                                                                                                                                                                                                                                                                                                                                            private SignedJWT verifyToken(String token, boolean isRefresh)
-                                                                                                                                                                                                                                                                                                                                                    throws JOSEException, ParseException {
-
-
-                                                                                                                                                                                                                                                                                                                                                // Dùng key để verify token
-                                                                                                                                                                                                                                                                                                                                                JWSVerifier verifier=new MACVerifier(SIGNER_KEY.getBytes());
-
-
-                                                                                                                                                                                                                                                                                                                                                //Parse chuỗi token thành đối tượng SignedJWT
-                                                                                                                                                                                                                                                                                                                                                SignedJWT signedJWT= SignedJWT.parse(token);
-
-
-
-                                                                                                                                                                                                                                                                                                                                                // Lấy claim expiration
-                                                                                                                                                                                                                                                                                                                                                Date expiryTime=(isRefresh)
-                                                                                                                                                                                                                                                                                                                                                        ? new Date(signedJWT.getJWTClaimsSet().getIssueTime()
-                                                                                                                                                                                                                                                                                                                                                            .toInstant().plus(REFRESH_DURATION,ChronoUnit.SECONDS ).toEpochMilli() )
-                                                                                                                                                                                                                                                                                                                                                        :signedJWT.getJWTClaimsSet().getExpirationTime();
-
-
-                                                                                                                                                                                                                                                                                                                                                        var verified=signedJWT.verify(verifier); // check chữ ký HMAC
-
-                                                                                                                                                                                                                                                                                                                                                        if(! verified || expiryTime.before(new Date()))
-                                                                                                                                                                                                                                                                                                                                                            throw new AppException(ErrorCode.UNAUTHENTICATED); // sai chữ ký hoặc hết hạn
-
-                                                                                                                                                                                                                                                                                                                                                    // Nếu jti đã bị revoke → coi như không hợp lệ
-                                                                                                                                                                                                                                                                                                                                                       if( invalidatedTokenRepository
-                                                                                                                                                                                                                                                                                                                                                               .existsById(signedJWT.getJWTClaimsSet().getJWTID()))
-                                                                                                                                                                                                                                                                                                                                                           throw new AppException(ErrorCode.UNAUTHENTICATED);
-
-                                                                                                                                                                                                                                                                                                                                                        return signedJWT;
-                                                                                                                                                                                                                                                                                                                                            }
-
-
-                                                                                                                                                                                                                                                                                                                                            // Tạo token JWT (SignedJWT với HS512) , có jti/exp/issuer/scope
-                                                                                                                                                                                                                                                                                                                                            private String generateToken( User user)
-                                                                                                                                                                                                                                                                                                                                            {
-
-                                                                                                                                                                                                                                                                                                                                                // dùng thuật toán mã hóa HMAC-SHA-512
-                                                                                                                                                                                                                                                                                                                                                JWSHeader header= new JWSHeader(JWSAlgorithm.HS512);
-
-
-                                                                                                                                                                                                                                                                                                                                                // Claims cơ bản
-                                                                                                                                                                                                                                                                                                                                                JWTClaimsSet jwtClaimsSet=new JWTClaimsSet.Builder()
-                                                                                                                                                                                                                                                                                                                                                        .subject(user.getId())   // lưu username ( nên dùng ID) //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                                                                                                                                                                                                                                                                                                                                                        .issuer("tihuz.com")
-                                                                                                                                                                                                                                                                                                                                                        .issueTime(new Date())
-                                                                                                                                                                                                                                                                                                                                                        .expirationTime(Date.from(Instant.now().plus(VALID_DURATION, ChronoUnit.SECONDS)))  // hết hạn sau VALID_DURATION
-                                                                                                                                                                                                                                                                                                                                                        .jwtID(UUID.randomUUID().toString())  // jti dùng để revoke
-
-                                                                                                                                                                                                                                                                                                                                                        .claim("scope", buildScope(user)) // scope như "USER ADMIN" quyền hạn của user
-                                                                                                                                                                                                                                                                                                                                                        .build();
-
-
-
-                                                                                                                                                                                                                                                                                                                                                // tạo Payload (body token)
-                                                                                                                                                                                                                                                                                                                                                Payload payload=new Payload(jwtClaimsSet.toJSONObject());
-
-                                                                                                                                                                                                                                                                                                                                                // Đóng gói header + payload thành JWSObject, chuẩn bị để ký
-                                                                                                                                                                                                                                                                                                                                                JWSObject jwsObject= new JWSObject(header,payload);
-
-                                                                                                                                                                                                                                                                                                                                                // ký với token
-                                                                                                                                                                                                                                                                                                                                                try {
-                                                                                                                                                                                                                                                                                                                                                    // Tạo đối tượng MACSigner dùng thuật toán HMAC với khóa bí mật SIGNER_KEY để ký
-                                                                                                                                                                                                                                                                                                                                                    jwsObject.sign(new MACSigner(SIGNER_KEY.getBytes()));
-
-                                                                                                                                                                                                                                                                                                                                                    // Chuyển JWT (bao gồm header, payload, signature) thành chuỗi dạng Compact Serialization (3 phần nối bằng dấu chấm)
-                                                                                                                                                                                                                                                                                                                                                    // Chuỗi này là token JWT cuối cùng bạn trả về client hoặc dùng để xác thực
-                                                                                                                                                                                                                                                                                                                                                    return jwsObject.serialize();
-
-                                                                                                                                                                                                                                                                                                                                                } catch (JOSEException e) {
-                                                                                                                                                                                                                                                                                                                                                    log.error("Can not create token");
-                                                                                                                                                                                                                                                                                                                                                    throw new RuntimeException(e);
-                                                                                                                                                                                                                                                                                                                                                }
-                                                                                                                                                                                                                                                                                                                                            }
-
-
-                                                                                                                                                                                                                                                                                                                                            // Lấy tập hợp roles ( nối thành 1 chuỗi cách nhau bởi khoảng trắng )
-                                                                                                                                                                                                                                                                                                                                            private  String buildScope(User user)
-                                                                                                                                                                                                                                                                                                                                            {
-
-
-                                                                                                                                                                                                                                                                                                                                                StringJoiner stringJoiner=new StringJoiner(" ");
-
-                                                                                                                                                                                                                                                                                                                                                if (!CollectionUtils.isEmpty( user.getRoles()))
-                                                                                                                                                                                                                                                                                                                                                    user.getRoles().forEach(role -> {
-                                                                                                                                                                                                                                                                                                                                                            stringJoiner.add("ROLE_"+ role.getName());
-                                                                                                                                                                                                                                                                                                                                                            if(!CollectionUtils.isEmpty(role.getPermissions()))
-                                                                                                                                                                                                                                                                                                                                                                     role.getPermissions()
-                                                                                                                                                                                                                                                                                                                                                                             .forEach(permission -> stringJoiner.add(permission.getName()));
-
-                                                                                                                                                                                                                                                                                                                                                    });
-
-                                                                                                                                                                                                                                                                                                                                                return stringJoiner.toString();
-
-
-                                                                                                                                                                                                                                                                                                                                                // Nếu tập roles của user rỗng hoặc null thì trả về chuỗi rỗng (""), không có quyền nào cả
-                                                                                                                                                                                                                                                                                                                                            //    if (CollectionUtils.isEmpty(user.getRoles())) return "";
-
-                                                                                                                                                                                                                                                                                                                                                // Nếu có roles, ví dụ Set<String> như {"ADMIN", "USER"}
-                                                                                                                                                                                                                                                                                                                                                // nối tất cả role thành một chuỗi, các phần tử cách nhau bởi dấu cách
-                                                                                                                                                                                                                                                                                                                                                // ví dụ "ADMIN USER"
-                                                                                                                                                                                                                                                                                                                                        //        return String.join(" ", user.getRoles());
-
-                                                                                                                                                                                                                                                                                                                                            }
-
-                                                                                                                                                                                                                                                                                                                                        }
+        if (!CollectionUtils.isEmpty(user.getRoles()))
+            user.getRoles()
+                    .forEach(role ->
+                                {
+                                    stringJoiner.add("ROLE_" + role.getName());
+                                    if (!CollectionUtils.isEmpty(role.getPermissions()))
+                                        role.getPermissions()
+                                                .forEach(permission ->
+                                                        stringJoiner.add(permission.getName()));
+                                });
+        return stringJoiner.toString();
+    }
+}

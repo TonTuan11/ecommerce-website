@@ -14,18 +14,18 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDateTime;
 
 @Data
-@MappedSuperclass
+@MappedSuperclass      // no table, field in this will be followed by child entity
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@EntityListeners(AuditingEntityListener.class)
+@EntityListeners(AuditingEntityListener.class)    //lắng nghe lifecycle events (create, update).
 public abstract class BaseEntity {
 
     // Tự động set thời gian khi tạo
-    @CreatedDate
-    @Column(updatable = false)
+    @CreatedDate  //Save the time the record was created.
+    @Column(updatable = false)  // no update, created once when insert
      LocalDateTime createdAt;
 
     // Tự động cập nhật khi update entity
-    @LastModifiedDate
+    @LastModifiedDate   // save the time the record was updated
      LocalDateTime updatedAt;
 
 

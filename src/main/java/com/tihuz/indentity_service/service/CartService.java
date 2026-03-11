@@ -16,7 +16,7 @@ import com.tihuz.indentity_service.repository.CartRepository;
 import com.tihuz.indentity_service.repository.ProductRepository;
 import com.tihuz.indentity_service.repository.UserRepository;
 
-import jakarta.persistence.PrePersist;
+
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;

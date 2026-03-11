@@ -245,12 +245,10 @@ public class ProductService {
             ProductFilterRequest request,
             int page,
             int size,
-         String sort
-
-    )
+         String sort )
     {
 
-        Sort sortObj=Sort.unsorted();
+        Sort sortObj=Sort.unsorted();  // chưa sắp xếp
 
         if( sort!=null && !sort.isBlank())
         {
@@ -261,7 +259,7 @@ public class ProductService {
             {
                 direction= Sort.Direction.DESC;
             }
-            sortObj=Sort.by(direction,sortParams[0]);
+            sortObj=Sort.by(direction,sortParams[0]);  // Sort.by(DESC,"price")
         }
 
 
@@ -284,12 +282,8 @@ public class ProductService {
 
         );
 
-
         return productRepository.findAll(spec,pageable)
                 .map(productMapper::toProductResponse);   // :: là method reference
-
-
-
 
     }
 
