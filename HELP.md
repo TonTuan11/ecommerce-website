@@ -1,7 +1,7 @@
 # Read Me First
 The following was discovered as part of building this project:
 
-* The original package name 'com.tihuz.indentity-service' is invalid and this project uses 'com.tihuz.indentity_service' instead.
+* The original package name 'com.tihuz.indentity-service' is invalid and this project uses 'com.tihuz.ecommerce_backend' instead.
 
 # Getting Started
 

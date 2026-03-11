@@ -1,0 +1,15 @@
+package com.tihuz.ecommerce_backend.dto.request;
+
+import lombok.*;
+import lombok.experimental.FieldDefaults;
+
+@Data
+@FieldDefaults(level = AccessLevel.PRIVATE)
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
+public class CartCreationRequest {
+
+    Long productId;
+    Integer quantity;
+}
