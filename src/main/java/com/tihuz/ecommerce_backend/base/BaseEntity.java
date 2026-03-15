@@ -19,12 +19,12 @@ import java.time.LocalDateTime;
 @EntityListeners(AuditingEntityListener.class)    //lắng nghe lifecycle events (create, update).
 public abstract class BaseEntity {
 
-    // Tự động set thời gian khi tạo
+
     @CreatedDate  //Save the time the record was created.
     @Column(updatable = false)  // no update, created once when insert
      LocalDateTime createdAt;
 
-    // Tự động cập nhật khi update entity
+
     @LastModifiedDate   // save the time the record was updated
      LocalDateTime updatedAt;
 
