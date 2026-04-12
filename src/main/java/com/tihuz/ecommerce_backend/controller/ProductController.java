@@ -1,6 +1,5 @@
 package com.tihuz.ecommerce_backend.controller;
 
-
 import com.tihuz.ecommerce_backend.dto.request.ProductCreationRequest;
 import com.tihuz.ecommerce_backend.dto.request.ProductFilterRequest;
 import com.tihuz.ecommerce_backend.dto.request.ProductUpdateRequest;
@@ -13,7 +12,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
-
 import java.math.BigDecimal;
 
 @RestController
@@ -22,19 +20,15 @@ import java.math.BigDecimal;
 @FieldDefaults(level = AccessLevel.PRIVATE,makeFinal = true)
 public class ProductController {
 
-
     ProductService productService;
 
     @PostMapping()
     ApiResponse<ProductResponse> createProduct(@RequestBody @Valid ProductCreationRequest request)
     {
         return ApiResponse.<ProductResponse>builder()
-                .result(  productService.create(request))
-                .build();
-
-
+                          .result(  productService.create(request))
+                          .build();
     }
-
 
     @GetMapping()
     ApiResponse<Page<ProductResponse>> getAll(
@@ -43,35 +37,32 @@ public class ProductController {
     )
     {
         return ApiResponse.<Page<ProductResponse>>builder()
-                .result(productService.getAll(page,size))
-                .build();
+                          .result(productService.getAll(page,size))
+                          .build();
     }
-
 
     @GetMapping("/{slug}")
     ApiResponse<ProductResponse> getProductBySlug(@PathVariable String slug)
     {
         return ApiResponse.<ProductResponse>builder()
-                .result(productService.getProductBySlug(slug))
-                .build();
+                          .result(productService.getProductBySlug(slug))
+                          .build();
     }
 
     @GetMapping("/i/{id}")
     ApiResponse<ProductResponse> getProductById(@PathVariable Long id)
     {
         return ApiResponse.<ProductResponse>builder()
-                .result(productService.getProductById(id))
-                .build();
+                          .result(productService.getProductById(id))
+                          .build();
     }
-
-
 
     @PutMapping("/{slug}")
     ApiResponse<ProductResponse> updateProduct(@PathVariable String slug, @RequestBody ProductUpdateRequest request)
     {
         return ApiResponse.<ProductResponse>builder()
-                .result(productService.updateProduct(slug,request))
-                .build();
+                          .result(productService.updateProduct(slug,request))
+                          .build();
     }
 
     @DeleteMapping("/{slug}")
@@ -79,11 +70,9 @@ public class ProductController {
     {
         productService.deleteProduct(slug);
         return ApiResponse.<Void>builder()
-                .message("Product deleted successfully")
-                .build();
+                          .message("Product deleted successfully")
+                          .build();
     }
-
-
 
     @GetMapping("/filter")
     ApiResponse<Page<ProductResponse>> filterProducts(
@@ -103,10 +92,8 @@ public class ProductController {
         request.setMaxPrice(maxPrice);
 
         return ApiResponse.<Page<ProductResponse>>builder()
-                .result(productService.filterProducts(request,page,size,sort))
-                .build();
+                          .result(productService.filterProducts(request,page,size,sort))
+                          .build();
     }
-
-
 
 }

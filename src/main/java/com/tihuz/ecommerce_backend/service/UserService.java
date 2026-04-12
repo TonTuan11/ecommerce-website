@@ -44,6 +44,11 @@ public class UserService {
         if(userRepository.existsByUsername(userName))
             throw new AppException(ErrorCode.USER_EXISTED);
 
+
+        if(userRepository.existsByEmail(request.getEmail()))
+            throw new AppException(ErrorCode.EMAIL_EXISTED);
+
+
         // Map user
         User user=userMapper.toUser(request);
         user.setUsername(userName);
@@ -93,35 +98,20 @@ public class UserService {
 
        return userMapper.toUserResponse(userRepository.save(user));
 
-
-
-
     }
 
 
-
-
-    // SELECT ALL
-    @PreAuthorize("hasRole('ADMIN')")
-   // @PreAuthorize("hasAuthority('APPROVE_DATA')")
-    public List<UserResponse> getAllUser() {
-
-
-        return userRepository.findAll()              //  List<User>
-                .stream()               // convert List<User> -> Stream<User>
-                .map(userMapper::toUserResponse) // map  User -> UserResponse
-                .toList();              // return List<UserResponse>
-    }
+    public List<UserResponse> getAllUser()
+        {
+            return userRepository.findAll()              //  List<User>
+                    .stream()               // convert List<User> -> Stream<User>
+                    .map(userMapper::toUserResponse) // map  User -> UserResponse
+                    .toList();              // return List<UserResponse>
+        }
 
 
 
-    //returnObject.username → username của user vừa lấy trong DB
-    //authentication.name → username trong token JWT (người đang login)
-     // @PostAuthorize(" hasRole('ADMIN') or returnObject.id == authentication.name")
-    // SELECT BY ID
-//    @PreAuthorize("hasRole('ADMIN')")
-//    @PostAuthorize("returnObject.id.equals(authentication.name)")
-    @PreAuthorize("hasRole('ADMIN') or #id.equals(authentication.name)")
+
     public UserResponse getUser (String id)
     {
 
@@ -129,8 +119,6 @@ public class UserService {
 
         return userMapper.toUserResponse( userRepository.findById(id)
                 .orElseThrow(()-> new AppException(ErrorCode.USER_NOTEXISTED) ));
-
-
 
     }
 
@@ -157,19 +145,13 @@ public class UserService {
         User user =userRepository.findById(userId)
                 .orElseThrow(()-> new AppException(ErrorCode.USER_NOTEXISTED) );
 
-
-        // Map user và mã hóa pass
         userMapper.updateUser(user,request);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
-
         var roles= roleRepository.findAllById(request.getRoles());
-
             user.setRoles(new HashSet<>(roles));
 
-
         return userMapper.toUserResponse(userRepository.save(user));
-
     }
 
     public void deleteUser(String userId)
@@ -189,12 +171,12 @@ public class UserService {
             char c = name.charAt(i);
 
             if (!(Character.isLetter(c) )) {
-                throw new AppException(ErrorCode.CATE_NAME);
+                throw new AppException(ErrorCode.USERNAME_INVALID3);
             }
 
             if (c == ' ')
             {
-                if (prev == ' ')   {throw new AppException(ErrorCode.CATE_NAME);}
+                if (prev == ' ')   {throw new AppException(ErrorCode.USERNAME_INVALID3);}
             }
             prev = c;
         }

@@ -1,25 +1,17 @@
 package com.tihuz.ecommerce_backend.validator;
 
-
-
-
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
-
 import static java.lang.annotation.ElementType.FIELD;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
-
-// áp dụng lên FIELD
-@Target({ FIELD})
-
-@Retention(RUNTIME)
-@Constraint(validatedBy = {DobValidator.class})
-
-public  @interface DobCostraint {
-
+@Target({ FIELD}) //using for FIELD
+@Retention(RUNTIME) //Keep annotation at runtime for validation.
+@Constraint(validatedBy = {DobValidator.class}) // Use DobValidator for validation.
+public  @interface DobConstraint
+{
     String message() ;
 
     int min();

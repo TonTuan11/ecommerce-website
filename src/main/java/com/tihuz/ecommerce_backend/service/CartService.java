@@ -2,7 +2,6 @@ package com.tihuz.ecommerce_backend.service;
 
 import com.tihuz.ecommerce_backend.dto.request.CartCreationRequest;
 import com.tihuz.ecommerce_backend.dto.request.CartUpdateRequest;
-
 import com.tihuz.ecommerce_backend.dto.response.CartItemResponse;
 import com.tihuz.ecommerce_backend.dto.response.CartResponse;
 import com.tihuz.ecommerce_backend.entity.Cart;
@@ -15,8 +14,6 @@ import com.tihuz.ecommerce_backend.mapper.CartMapper;
 import com.tihuz.ecommerce_backend.repository.CartRepository;
 import com.tihuz.ecommerce_backend.repository.ProductRepository;
 import com.tihuz.ecommerce_backend.repository.UserRepository;
-
-
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -30,16 +27,16 @@ import java.util.Optional;
 
 @RequiredArgsConstructor
 @Service
-
 @FieldDefaults(level = AccessLevel.PRIVATE,makeFinal = true)
-public class CartService {
+public class CartService
+{
 
     CartRepository cartRepository;
     ProductRepository productRepository;
     UserRepository userRepository;
     CartMapper cartMapper;
 
-    // lấy ra user hiện tại
+    // user login
     private String getCurrentUserId() {
         return SecurityContextHolder.getContext()
                 .getAuthentication()
@@ -47,15 +44,13 @@ public class CartService {
     }
 
     public CartResponse addToCart(CartCreationRequest request)
-//    public void addToCart(Long productId,int quantity)
     {
-        // lấy ra id của user
         String userId=getCurrentUserId();
 
-        //-check sản phẩm
-        // + tồn tại không
-        // + status phải ACTIVE không
-        // + đủ stock không
+        //-check product
+        // + exist
+        // + status ACTIVE
+        // + stock
         Product product=productRepository.findById(request.getProductId())
                 .orElseThrow(()-> new AppException(ErrorCode.PRODUCT_NOTEXISTED));
 
@@ -70,7 +65,7 @@ public class CartService {
         }
 
 
-        // tìm cart của user, chưa có thì tạo
+        // find cart for user, new if not exist
         Cart cart = cartRepository.findByUserId(userId)
                 .orElseGet(() -> {
                     Cart newCart = new Cart();
@@ -79,19 +74,16 @@ public class CartService {
                 });
 
 
-        // kiểm tra sản phẩm có trong cart chưa
-        Optional<CartItem> existingItem=cart.getItems()             // lấy ra danh sách
-                .stream()                       // chuyển list sang stream
-                .filter(item->item.getProduct().getId().equals(request.getProductId()))   // dùng để lọc ra CartItem nào có cùng productid với sản phẩm đang thêm
-                .findFirst();         //nếu có trả về có giá trị, không có thì empty
+        // check product in cart
+        Optional<CartItem> existingItem=cart.getItems()             // get cart item
+                .stream()
+                .filter(item->item.getProduct().getId().equals(request.getProductId()))
+                .findFirst();
 
-
-
-        // nếu sản phẩm đã có trong giỏ hàng
         if(existingItem.isPresent())
         {
-            CartItem item=existingItem.get();          // lấy ra
-            int newQuantity=item.getQuantity() + request.getQuantity();    // tăng thêm số lượng
+            CartItem item=existingItem.get();
+            int newQuantity=item.getQuantity() + request.getQuantity();
 
             if( product.getQuantity()<newQuantity)
             {
@@ -108,23 +100,17 @@ public class CartService {
             item.setProduct(product);
             item.setQuantity(request.getQuantity());
 
-             cart.getItems().add(item);   // thêm item vào giỏ
-
+            cart.getItems().add(item);
         }
-        // lưu db
         cartRepository.save(cart);
 
-// map sang response
         CartResponse response = cartMapper.toCartResponse(cart);
+
         // tính sub và total
         calculateCart(response);
 
         return response;
 
-
-
-//        cartRepository.save(cart);
-//        return cartMapper.toCartResponse(cart);
 
     }
 

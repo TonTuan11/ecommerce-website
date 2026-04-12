@@ -1,18 +1,19 @@
 package com.tihuz.ecommerce_backend.dto.response;
 
-
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
 import java.util.List;
 
-@Data
+@Getter
+@Setter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class CartResponse {
+public class CartResponse
+{
 
      Long cartId;
      List<CartItemResponse> items;

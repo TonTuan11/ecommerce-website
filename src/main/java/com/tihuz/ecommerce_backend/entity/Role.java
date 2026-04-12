@@ -1,23 +1,20 @@
 package com.tihuz.ecommerce_backend.entity;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.Id;
-import jakarta.persistence.ManyToMany;
+import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-
 import java.util.HashSet;
 import java.util.Set;
 
-
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-// đánh dấu class này là 1 table
 @Entity
+@Table(name = "role")
 public class Role {
 
     @Id

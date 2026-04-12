@@ -12,7 +12,6 @@ import com.tihuz.ecommerce_backend.dto.request.RefreshRequest;
 import com.tihuz.ecommerce_backend.dto.response.AuthenticationResponse;
 import com.tihuz.ecommerce_backend.dto.response.IntrospectResponse;
 import com.tihuz.ecommerce_backend.entity.InvalidatedToken;
-import com.tihuz.ecommerce_backend.entity.Permission;
 import com.tihuz.ecommerce_backend.entity.Role;
 import com.tihuz.ecommerce_backend.entity.User;
 import com.tihuz.ecommerce_backend.exception.AppException;
@@ -28,7 +27,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
-
 import java.text.ParseException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -47,17 +45,13 @@ Handle authentication and JWT token management:
         */
 public class AuthenticationService {
 
-    UserRepository userRepository;   // thao tác user
+    UserRepository userRepository;
+    PasswordEncoder passwordEncoder;
+    InvalidatedTokenRepository invalidatedTokenRepository;
 
-    PasswordEncoder passwordEncoder;   // so khớp password
-
-    InvalidatedTokenRepository invalidatedTokenRepository;   // bảng blacklist jti
-
-    // annotation lombok ( để không inject vào contructor)
     @NonFinal
-    // annotation đọc biến từ file yml
     @Value("${jwt.signerKey}")
-    protected String SIGNER_KEY;   // khóa HMAC HS512
+    protected String SIGNER_KEY;
 
     @NonFinal
     @Value("${jwt.valid-duration}")
@@ -66,8 +60,6 @@ public class AuthenticationService {
     @NonFinal
     @Value("${jwt.refreshable-duration}")
     protected long REFRESH_DURATION;
-
-
 
 
     public IntrospectResponse introspectResponse(IntrospectRequest request)
@@ -132,10 +124,8 @@ public class AuthenticationService {
                                                     .id(jit)
                                                     .expiryTime(expiryTime)
                                                     .build();
-
             // lưu vào repo
             invalidatedTokenRepository.save(invalidatedToken);
-
         }
         catch (AppException e)
         {
@@ -179,21 +169,17 @@ public class AuthenticationService {
                         () -> new AppException(ErrorCode.UNAUTHENTICATED)
                 );
 
-        // tạo token cho user qua hàm generateToken
         var token = generateToken(user);
 
 
-        // trả về và build
         return AuthenticationResponse.builder()
                 .token(token)
                 .authenticated(true)
                 .build();
-
-
     }
 
 
-    //  Verify: chữ ký đúng + chưa hết hạn + chưa bị revoke
+    // Verify: valid signature, not expired, and not revoked.
     private SignedJWT verifyToken(String token, boolean isRefresh)
             throws JOSEException, ParseException {
 
@@ -257,8 +243,8 @@ public class AuthenticationService {
             // This string is JWT token, returned to the client or used for authentication.
             return jwsObject.serialize();
 
-        } catch (
-                JOSEException e) {
+        } catch (JOSEException e)
+        {
             log.error("Can not create token");
             throw new RuntimeException(e);
         }
@@ -312,7 +298,7 @@ public class AuthenticationService {
             {
                 if(role.getPermissions()!=null)
                 {
-                    role.getPermissions().forEach(p -> permissions.add(p.getName()));
+                    role.getPermissions().forEach(p-> permissions.add(p.getName()));
                 }
             }
         }

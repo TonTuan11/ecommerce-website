@@ -6,9 +6,14 @@
 #4 target/xxx.jar
 FROM maven:3.9-eclipse-temurin-21 AS build
 
+#create folder app
 WORKDIR /app
+
+#copy all source code local to container
 COPY . .
 
+
+#build maven -> .jar
 RUN mvn clean package -DskipTests
 
 

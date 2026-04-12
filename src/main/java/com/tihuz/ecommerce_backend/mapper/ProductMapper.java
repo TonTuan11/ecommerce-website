@@ -1,6 +1,5 @@
 package com.tihuz.ecommerce_backend.mapper;
 
-
 import com.tihuz.ecommerce_backend.dto.request.ProductCreationRequest;
 import com.tihuz.ecommerce_backend.dto.request.ProductUpdateRequest;
 import com.tihuz.ecommerce_backend.dto.response.ProductResponse;
@@ -11,8 +10,6 @@ import org.mapstruct.MappingTarget;
 
 @Mapper(componentModel = "spring")
 public interface ProductMapper {
-
-
 
 
     Product toProduct(ProductCreationRequest request);

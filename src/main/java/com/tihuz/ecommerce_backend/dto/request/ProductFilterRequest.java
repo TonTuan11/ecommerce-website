@@ -7,12 +7,11 @@ import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
 
-
 @Getter
 @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class ProductFilterRequest {
-
+public class ProductFilterRequest
+{
 
     Long categoryId;
     String keyword;

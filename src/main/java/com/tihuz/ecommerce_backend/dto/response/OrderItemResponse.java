@@ -1,21 +1,22 @@
 package com.tihuz.ecommerce_backend.dto.response;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
 
-@Data
+@Getter
+@Setter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class OrderItemResponse {
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class OrderItemResponse
+{
 
-    private Long productId;
-    private String productName;
-    private BigDecimal price;
-    private Integer quantity;
-    private BigDecimal subTotal;
+     Long productId;
+     String productName;
+     BigDecimal price;
+     Integer quantity;
+     BigDecimal subTotal;
 }

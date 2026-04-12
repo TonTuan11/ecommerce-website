@@ -14,7 +14,8 @@ import lombok.experimental.FieldDefaults;
 @Builder
 @Table(name = "product_image")
 @Entity
-public class ProductImage {
+public class ProductImage
+{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,6 +26,6 @@ public class ProductImage {
     Boolean isThumbnail;
 
     @ManyToOne(fetch = FetchType.LAZY)
-            @JoinColumn(name = "product_id")
+    @JoinColumn(name = "product_id")
     Product product;
 }

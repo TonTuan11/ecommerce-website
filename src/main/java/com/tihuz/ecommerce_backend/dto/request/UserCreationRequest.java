@@ -1,5 +1,6 @@
 package com.tihuz.ecommerce_backend.dto.request;
-import com.tihuz.ecommerce_backend.validator.DobCostraint;
+
+import com.tihuz.ecommerce_backend.validator.DobConstraint;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
@@ -7,15 +8,14 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 import java.time.LocalDate;
 
-// class này dùng để nhận request từ client khi tạo user (tránh thao tác trực tiếp trên entity)
-@Data
-//annotation tạo constructor
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
-//annotation tạo object nhanh hơn
 @Builder
-@FieldDefaults(level = AccessLevel.PRIVATE) // set cho các thuộc tính là private
-public class UserCreationRequest {
+@FieldDefaults(level = AccessLevel.PRIVATE)
+public class UserCreationRequest
+{
 
     @Size(min =4, max = 255,  message = "USERNAME_INVALID")
     @Pattern(regexp = "^[a-zA-Z0-9_]+$", message = "USERNAME_INVALID3")
@@ -28,7 +28,7 @@ public class UserCreationRequest {
      String lastname;
 
     @NotNull(message = "DOB_NOTNULL")
-    @DobCostraint(min = 16,message = "INVALID_DOB")
+    @DobConstraint(min = 16,message = "INVALID_DOB")
     LocalDate dob;
 
 

@@ -1,6 +1,5 @@
 package com.tihuz.ecommerce_backend.dto.response;
 
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.tihuz.ecommerce_backend.enums.CategoryStatus;
 import lombok.*;
@@ -9,15 +8,15 @@ import lombok.experimental.FieldDefaults;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Data
-//annotation tạo constructor
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
-//annotation tạo object nhanh hơn
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class CategoryResponse {
+public class CategoryResponse
+{
 
     Long id;
     String name;

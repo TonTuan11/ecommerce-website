@@ -9,8 +9,8 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface ProductRepository extends JpaRepository<Product, Long>,
-       JpaSpecificationExecutor<Product> { // phải extends thêm JpaSpecificationExecutor vì repo không biết Specification
+public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpecificationExecutor<Product>
+       { //Extend JpaSpecificationExecutor<> to use findAll(Specification, Pageable).
 
     boolean existsByName(String name);
     boolean existsBySlug (String slug);

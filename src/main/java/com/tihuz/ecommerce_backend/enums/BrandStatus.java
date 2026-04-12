@@ -1,7 +1,6 @@
 package com.tihuz.ecommerce_backend.enums;
 
-public enum  RoleType
+public enum BrandStatus
 {
-    ADMIN,
-    USER
+    ACTIVE, INACTIVE
 }

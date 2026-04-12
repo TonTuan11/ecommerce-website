@@ -5,12 +5,14 @@ import jakarta.validation.constraints.Size;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-@Data
+@Getter
+@Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class CategoryCreationRequest {
+public class CategoryCreationRequest
+{
 
     @NotBlank(message = "CATE_NOTNULL")
     @Size(max = 100, message = "CATE_INVALID2")
@@ -21,8 +23,4 @@ public class CategoryCreationRequest {
 
 }
 
-
-//“Sao không gửi object cho tiện? mà chỉ gửi mỗi parentId?”
-
-//        “UI có thể hiển thị object, nhưng API chỉ nên nhận ID.
-//Như vậy API gọn, dễ validate, tránh overposting và backend giữ quyền kiểm soát dữ liệu.”
+//UI shows full object, API only needs ID — simpler, safer, easier to control.

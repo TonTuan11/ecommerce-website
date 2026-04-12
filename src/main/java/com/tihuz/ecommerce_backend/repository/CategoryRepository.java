@@ -26,9 +26,7 @@ public interface CategoryRepository extends JpaRepository<Category,Long> {
     @Query("SELECT c FROM Category c")
     List<Category> findAllForTree();
 
-
-
-    // lấy toàn bộ cate con
+    // Child category
     List<Category> findByParentId( Long parentId);
 
 

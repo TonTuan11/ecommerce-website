@@ -22,7 +22,7 @@ public class CorsConfig {
 
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
-        configuration.setAllowCredentials(true); //Allow sending cookies. / header Authorization từ frontend.
+        configuration.setAllowCredentials(true); //Allow sending cookies. / header Authorization from the frontend.
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration); // all apis flow this configuration

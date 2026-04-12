@@ -16,24 +16,21 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ProductResponse {
-
+public class ProductResponse
+{
     Long id;
     String name;
     BigDecimal price;
     BigDecimal priceSale;
     Integer quantity;
     String slug;
-
     Long categoryId;
     String categoryName;
-
+    Long brandId;
+    String brandName;
     List<ProductImageResponse> images;
     String thumbnail;
-
-
     ProductStatus status;
-
     LocalDateTime createdAt;
     LocalDateTime updatedAt;
 }

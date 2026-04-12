@@ -1,7 +1,5 @@
 package com.tihuz.ecommerce_backend.mapper;
 
-
-
 import com.tihuz.ecommerce_backend.dto.request.RoleRequest;
 import com.tihuz.ecommerce_backend.dto.response.RoleResponse;
 import com.tihuz.ecommerce_backend.entity.Role;
@@ -12,10 +10,9 @@ import org.mapstruct.Mapping;
 public interface RoleMapper {
 
 
-@Mapping( target = "permissions",ignore = true)
-Role toRole(RoleRequest request);
+    @Mapping( target = "permissions",ignore = true)
+    Role toRole(RoleRequest request);
 
     RoleResponse toRoleResponse(Role role);
-
 
 }

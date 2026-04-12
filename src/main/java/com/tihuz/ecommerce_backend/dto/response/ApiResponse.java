@@ -1,27 +1,27 @@
 package com.tihuz.ecommerce_backend.dto.response;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-@Data
+@Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
-// annotation này khi json có field nào =null thì ẩn
+//This annotation hides fields that are null in the JSON response.
 @JsonInclude(JsonInclude.Include.NON_NULL)
 
-
-//ApiResponse là một response wrapper.
-//Nó dùng Generic để có thể chứa nhiều kiểu dữ liệu khác nhau như một object,
-//một danh sách, hoặc dữ liệu phân trang, tùy theo từng API.
-public class ApiResponse <T> { //generic type
+//ApiResponse is a generic wrapper that can return any data type (object, list, or pagination).
+public class ApiResponse <T> //generic type
+{
 
      @Builder.Default
      int code=1000;
 
      String message;
 
-     T result; // kiểu dữ liệu sẽ do người dùng class quyết định
+     T result;
 
 }

@@ -1,9 +1,9 @@
 package com.tihuz.ecommerce_backend.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.tihuz.ecommerce_backend.enums.PaymentMethod;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-
 
 @Getter
 @Setter
@@ -11,11 +11,15 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class OrderRequest {
-
+@JsonIgnoreProperties(ignoreUnknown = false)
+public class OrderRequest
+{
     String recipientName;
+
     String recipientPhone;
+
     String shippingAddress;
+
     PaymentMethod  paymentMethod;
 
 }

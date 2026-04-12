@@ -1,5 +1,6 @@
 package com.tihuz.ecommerce_backend.configuration;
 
+import com.tihuz.ecommerce_backend.base.BaseEntity;
 import com.tihuz.ecommerce_backend.entity.Role;
 import com.tihuz.ecommerce_backend.entity.User;
 import com.tihuz.ecommerce_backend.enums.RoleType;
@@ -25,12 +26,10 @@ import java.util.Set;
 @Slf4j
 
 // this class automatically creates a unique administrator user at startup
-public class ApplicationInitConfig {
-
-    //PasswordConfig passwordConfig;
+public class ApplicationInitConfig extends BaseEntity
+{
     PasswordEncoder passwordEncoder;
     RoleRepository roleRepository;
-
 
     @Bean
     // đảm bảo runner chỉ chạy khi DB driver là MySQL (một safeguard môi trường).

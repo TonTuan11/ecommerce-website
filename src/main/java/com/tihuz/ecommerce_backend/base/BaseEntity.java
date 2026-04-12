@@ -1,6 +1,5 @@
 package com.tihuz.ecommerce_backend.base;
 
-
 import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.MappedSuperclass;
@@ -16,17 +15,15 @@ import java.time.LocalDateTime;
 @Data
 @MappedSuperclass      // no table, field in this will be followed by child entity
 @FieldDefaults(level = AccessLevel.PRIVATE)
-@EntityListeners(AuditingEntityListener.class)    //lắng nghe lifecycle events (create, update).
-public abstract class BaseEntity {
-
+@EntityListeners(AuditingEntityListener.class)    //listen to lifecycle events (create, update).
+public abstract class BaseEntity
+{
 
     @CreatedDate  //Save the time the record was created.
     @Column(updatable = false)  // no update, created once when insert
      LocalDateTime createdAt;
 
-
     @LastModifiedDate   // save the time the record was updated
      LocalDateTime updatedAt;
-
 
 }

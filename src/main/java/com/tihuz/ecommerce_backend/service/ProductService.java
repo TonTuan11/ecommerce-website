@@ -1,13 +1,12 @@
 package com.tihuz.ecommerce_backend.service;
 
-
 import com.tihuz.ecommerce_backend.dto.request.ProductCreationRequest;
 import com.tihuz.ecommerce_backend.dto.request.ProductFilterRequest;
 import com.tihuz.ecommerce_backend.dto.request.ProductImageRequest;
 import com.tihuz.ecommerce_backend.dto.request.ProductUpdateRequest;
-
 import com.tihuz.ecommerce_backend.dto.response.ProductImageResponse;
 import com.tihuz.ecommerce_backend.dto.response.ProductResponse;
+import com.tihuz.ecommerce_backend.entity.Brand;
 import com.tihuz.ecommerce_backend.entity.Category;
 import com.tihuz.ecommerce_backend.entity.Product;
 import com.tihuz.ecommerce_backend.entity.ProductImage;
@@ -15,58 +14,48 @@ import com.tihuz.ecommerce_backend.enums.ProductStatus;
 import com.tihuz.ecommerce_backend.exception.AppException;
 import com.tihuz.ecommerce_backend.exception.ErrorCode;
 import com.tihuz.ecommerce_backend.mapper.ProductMapper;
+import com.tihuz.ecommerce_backend.repository.BrandRepository;
 import com.tihuz.ecommerce_backend.repository.CategoryRepository;
 import com.tihuz.ecommerce_backend.repository.ProductRepository;
 import com.tihuz.ecommerce_backend.specification.ProductSpecification;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
-
-
 import java.text.Normalizer;
-
 import java.util.List;
 
-
 @Service
-
-// thay vì dùng  @Autowired cho từng biến thì dùng RequiredArgsConstructor
 @RequiredArgsConstructor
-
-// makeFinal = true field không khai báo thì thành final
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-
-public class ProductService {
-
-
+public class ProductService
+{
     ProductRepository productRepository;
     ProductMapper productMapper;
     CategoryRepository categoryRepository;
     CategoryService categoryService;
+    BrandRepository brandRepository;
 
     public ProductResponse create(ProductCreationRequest request)
     {
-
-        // check categoryId
         Category category= categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(()->new AppException(ErrorCode.CATE_NOTEXISTED));
+
+        Brand brand=brandRepository.findById(request.getBrandId())
+                .orElseThrow(()->new AppException(ErrorCode.BRAND_NOTEXISTED));
 
         if( category.getChildren()!= null && !category.getChildren().isEmpty())
         {
             throw  new AppException(ErrorCode.CATE_HAS_CHILD);
         }
 
-
         // check name
         String name=checkName( request.getName());
-
         if(productRepository.existsByName(name))
         {
             throw new AppException(ErrorCode.PRODUCT_EXISTED);
@@ -75,8 +64,7 @@ public class ProductService {
         // to slug
         String slug=toSlug(name);
 
-
-        // set các thuộc tính cho product
+        // set filed
         Product product= new Product();
         product.setName(name);
         product.setSlug(slug);
@@ -84,68 +72,52 @@ public class ProductService {
         product.setPriceSale(request.getPriceSale());
         product.setQuantity(request.getQuantity());
         product.setCategory(category);
+        product.setBrand(brand);
         product.setStatus(ProductStatus.ACTIVE);
 
 
-        // check ảnh
+        // check image
         if(request.getImages()!=null)
         {
-            for (ProductImageRequest img: request.getImages())  // chạy từng request dưới kiểu ProductImageRequest
+            for (ProductImageRequest img: request.getImages())
             {
-
-                // Tạo entity ProductImage từ dữ liệu request (chưa lưu DB)
                 ProductImage image = ProductImage.builder()
-                        .url(img.getUrl())
-                        .isThumbnail(img.getIsThumbnail())
-                        .product(product)
-                        .build();
-
-                product.getImages().add(image);   // Thêm image vào danh sách images của product (object graph trong RAM)
+                                                 .url(img.getUrl())
+                                                 .isThumbnail(img.getIsThumbnail())
+                                                 .product(product)
+                                                 .build();
+                product.getImages().add(image);   // add image to list images (object graph in RAM)
             }
         }
 
 
-        // lấy url của ảnh có isThumbnail = true
+         // URL of the thumbnail image
         String thumbnail = product.getImages()
-                // stream() dùng để duyệt từng phần tử 1
                 .stream()
-
-                // check ảnh nào có isThumbnail = true thì giữ
                 .filter(img -> Boolean.TRUE.equals(img.getIsThumbnail()))
-
-                // map kiểu ProductImage gọi method getUrl trả về kiểu  String
                 .map(ProductImage::getUrl)
-
-                //Lấy phần tử đầu tiên trong stream
                 .findFirst()
-
-                // nếu ko có dữ liệu thì trả về null
                 .orElse(null);
 
-        // kết quả cuối thumbnail = "b.jpg";
+        // result thumbnail = "b.jpg";
 
 
 
-        // chuyển từ  List<ProductImage> sang  List<ProductImageResponse>
+        // Convert  List<ProductImage> -> List<ProductImageResponse>
         List<ProductImageResponse> images = product.getImages()
-                .stream()
-                .map(img -> ProductImageResponse.builder()
-                        .id(img.getId())  // chưa có id vì chưa save
-                        .url(img.getUrl())
-                        .isThumbnail(img.getIsThumbnail())
-                        .build())
+                                                    .stream()
+                                                    .map(img -> ProductImageResponse.builder()
+                                                            .id(img.getId())
+                                                            .url(img.getUrl())
+                                                            .isThumbnail(img.getIsThumbnail())
+                                                            .build())
                 .toList();
 
-
-
-
-
-
-        // lưu xuống repo
+        // save repo
         Product saved=productRepository.save(product);
 
 
-        // trả về response
+        // return response
         return ProductResponse.builder()
                 .id(saved.getId())
                 .name(saved.getName())
@@ -154,13 +126,14 @@ public class ProductService {
                 .quantity(saved.getQuantity())
                 .categoryId(category.getId())
                 .categoryName(category.getName())
+                .brandId(brand.getId())
+                .brandName(brand.getName())
                 .thumbnail(thumbnail)
                 .images(images)
                 .status(saved.getStatus())
                 .createdAt(saved.getCreatedAt())
                 .updatedAt(saved.getUpdatedAt())
                 .build();
-
     }
 
 
@@ -168,8 +141,6 @@ public class ProductService {
     {
 
         Pageable pageable= PageRequest.of(page,size);
-
-
         return productRepository.findAll(pageable)
                 .map(productMapper::toProductResponse);
 
@@ -201,9 +172,6 @@ public class ProductService {
         Product product= productRepository.findBySlug(slug)
                 .orElseThrow(()->new AppException(ErrorCode.PRODUCT_NOTEXISTED));
 
-
-
-
         String name= checkName(request.getName());
         String newslug=toSlug(name);
 
@@ -222,18 +190,20 @@ public class ProductService {
         Category category= categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(()->new AppException(ErrorCode.CATE_NOTEXISTED));
 
+        Brand brand= brandRepository.findById(request.getBrandId())
+                .orElseThrow(()->new AppException(ErrorCode.BRAND_NOTEXISTED));
 
         if( category.getChildren()!=null && !category.getChildren().isEmpty())
         {
             throw  new AppException(ErrorCode.CATE_HAS_CHILD);
         }
 
-
           productMapper.updateProduct(product,request);
-        product.setName(name);
-        product.setSlug(newslug);
-        product.setCategory(category);
-        product.setQuantity(request.getQuantity());
+            product.setName(name);
+            product.setSlug(newslug);
+            product.setCategory(category);
+            product.setBrand(brand);
+            product.setQuantity(request.getQuantity());
 
          return productMapper.toProductResponse(productRepository.save(product));
 
@@ -251,13 +221,8 @@ public class ProductService {
     }
 
 
-    public Page<ProductResponse> filterProducts(
-            ProductFilterRequest request,
-            int page,
-            int size,
-         String sort )
+    public Page<ProductResponse> filterProducts(ProductFilterRequest request, int page, int size, String sort )
     {
-
         Sort sortObj=Sort.unsorted();  // chưa sắp xếp
 
         if( sort!=null && !sort.isBlank())

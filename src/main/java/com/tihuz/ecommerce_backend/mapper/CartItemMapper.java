@@ -5,9 +5,9 @@ import com.tihuz.ecommerce_backend.entity.CartItem;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-// spring quản lý bean
 @Mapper(componentModel = "spring")
-public interface CartItemMapper {
+public interface CartItemMapper
+{
 
     @Mapping(source = "product.id", target = "productId")
     @Mapping(source = "product.name", target = "productName")

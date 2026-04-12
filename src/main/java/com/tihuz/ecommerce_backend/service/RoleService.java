@@ -1,6 +1,5 @@
 package com.tihuz.ecommerce_backend.service;
 
-
 import com.tihuz.ecommerce_backend.dto.request.RoleRequest;
 import com.tihuz.ecommerce_backend.dto.response.RoleResponse;
 import com.tihuz.ecommerce_backend.entity.Permission;
@@ -14,8 +13,8 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -47,33 +46,25 @@ public class RoleService {
 
 
 
-    public RoleResponse create(RoleRequest request) {
+    public RoleResponse create(RoleRequest request)
+    {
 
-        // 1. Permission từ request
-        // dùng Set để loại bỏ duplicate
-        // và dùng các phép toán tập hợp removeAll
         Set<String> requested = new HashSet<>(request.getPermissions());
 
-        // 2.Tìm Permission tồn tại trong DB
+        // Find permission in the database
         var foundPermissions = permissionRepository.findAllById(requested);
-
-        String.valueOf(foundPermissions);
 
         Set<String> found = foundPermissions
                 .stream()
-                .map(Permission::getName) // với mỗi object permission lấy ra tên của nó
-                .collect(Collectors.toSet()); //  thu thập lại thành 1 Set
-                                                // là chuyển từ List<Permission> sang Set<String> (chứa tên)
+                .map(Permission::getName)
+                .collect(Collectors.toSet());
 
-
-        // 3. Permission bị thiếu
+        // Permission does not exist in the database
         requested.removeAll(found);
 
-        // nếu requested còn phần từ thì nghĩa là đang có permission không tồn tại trong db
-        if (!requested.isEmpty()) {
-
+        if (!requested.isEmpty())
+        {
             ErrorContext.set(requested);
-
             throw new AppException(ErrorCode.PERMISSION_NOTEXISTED);
         }
 
@@ -86,6 +77,7 @@ public class RoleService {
     }
 
 
+    @PreAuthorize("hasRole('ADMIN')")
     public List<RoleResponse> getAll()
     {
         var roles= roleRepository.findAll();
@@ -95,6 +87,7 @@ public class RoleService {
                 .toList();
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     public void delete(String role)
     {
         roleRepository.deleteById(role);

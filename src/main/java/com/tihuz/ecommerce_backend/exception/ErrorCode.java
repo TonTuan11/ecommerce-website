@@ -8,20 +8,15 @@ import org.springframework.http.HttpStatusCode;
 
 @Getter
 @FieldDefaults(level = AccessLevel.PRIVATE)
-
 public enum ErrorCode  {
 
-
-    // Trong enum JVM tự động new object, nên khi gọi là gọi object tĩnh ( static final object)
-
-    // Mỗi hằng enum là một singleton object có dữ liệu riêng.
-    // instance ( đối tượng tĩnh)
+    // Enum values are created once and reused
     INVALID_KEY ("Invalid message key",1001,HttpStatus.BAD_REQUEST),
     UNCATEGORIZED_EXCEPTION("uncategorized exception",4444, HttpStatus.INTERNAL_SERVER_ERROR),
     USER_EXISTED("User existed",1002,HttpStatus.BAD_REQUEST),
     FAIL_PASSWORD("Password fail",2002,HttpStatus.BAD_REQUEST),
 
-    // Transactionrequest
+    // Transaction request
     TRANSACTION_EXCEPTION("transaction exception",55555, HttpStatus.INTERNAL_SERVER_ERROR),
 
 
@@ -30,28 +25,27 @@ public enum ErrorCode  {
     USERNAME_INVALID1("Username must be at least {max} character",1003,HttpStatus.BAD_REQUEST),
 
     INVALID_PASSWORD("Password must be at least {min} character",1004,HttpStatus.BAD_REQUEST),
-    USER_NOTEXISTED("User notexisted",1005,HttpStatus.NOT_FOUND),
-    UNAUTHENTICATED("unauthenticated",1006,HttpStatus.UNAUTHORIZED),
+    USER_NOTEXISTED("User not existed",1005,HttpStatus.NOT_FOUND),
+    UNAUTHENTICATED("Authentication required",1006,HttpStatus.UNAUTHORIZED),
     UNAUTHORIZED("You do not have permission",1007,HttpStatus.FORBIDDEN),
     INVALID_DOB("Your age must be at least {min}",1008,HttpStatus.BAD_REQUEST),
     DOB_NOTNULL("DOB must not be null",1009,HttpStatus.BAD_REQUEST),
     ROLE_NOTEXISTED("ROLE not existed",1010,HttpStatus.BAD_REQUEST),
 
 
-    // Permiisson
-    PERMISSION_NOTEXISTED("Permisson not existed",1010,HttpStatus.NOT_FOUND),
+    // Permission
+    PERMISSION_NOTEXISTED("Permission not existed",1010,HttpStatus.NOT_FOUND),
 
 
     // Category
-
     CATE_EXISTED("Category existed",1011,HttpStatus.BAD_REQUEST),
-    CATE_NOTEXISTED("Category notexisted",1012,HttpStatus.NOT_FOUND),
+    CATE_NOTEXISTED("Category not existed",1012,HttpStatus.NOT_FOUND),
     CATE_NAME("Category Name Invalid",1013,HttpStatus.BAD_REQUEST),
     CATE_NOTNULL("Name must not be null",1014,HttpStatus.BAD_REQUEST),
     CATE_INVALID("Name must be at least {min} character",1015,HttpStatus.BAD_REQUEST),
     CATE_INVALID2("Name up to {max} character",1016,HttpStatus.BAD_REQUEST),
     CATE_INVALID3("Name cannot be all numbers ",1017,HttpStatus.BAD_REQUEST),
-    CATE_PARENT_NOTEXISTED("Category parendId notexisted",1012,HttpStatus.NOT_FOUND),
+    CATE_PARENT_NOTEXISTED("Category parendId not existed",1012,HttpStatus.NOT_FOUND),
     CATE_PARENT_INVALID("Category parendId invalid",1012,HttpStatus.BAD_REQUEST),
     CATE_HAS_CHILD("Category has children",1012,HttpStatus.BAD_REQUEST),
 
@@ -66,8 +60,8 @@ public enum ErrorCode  {
 
 
     //Brand
-    BRAND_EXISTED("Category existed",1018,HttpStatus.BAD_REQUEST),
-    BRAND_NOTEXISTED("Category notexisted",1019,HttpStatus.NOT_FOUND),
+    BRAND_EXISTED("Brand existed",1018,HttpStatus.BAD_REQUEST),
+    BRAND_NOTEXISTED("Brand not existed",1019,HttpStatus.NOT_FOUND),
     BRAND_NAME("Category Name Invalid",1020,HttpStatus.BAD_REQUEST),
     BRAND_NOTNULL("Name must not be null",1021,HttpStatus.BAD_REQUEST),
     BRAND_INVALID("Name must be at least {min} character",1022,HttpStatus.BAD_REQUEST),
@@ -79,7 +73,7 @@ public enum ErrorCode  {
     // PRODUCT
 
     PRODUCT_EXISTED("Product existed",1025,HttpStatus.BAD_REQUEST),
-    PRODUCT_NOTEXISTED("Product notexisted",1026,HttpStatus.NOT_FOUND),
+    PRODUCT_NOTEXISTED("Product not existed",1026,HttpStatus.NOT_FOUND),
     PRODUCT_NAME("Product Name Invalid",1027,HttpStatus.BAD_REQUEST),
     PRODUCT_NOTNULL("Name must not be null",1028,HttpStatus.BAD_REQUEST),
     PRODUCT_INVALID("Name must be at least {min} character",1029,HttpStatus.BAD_REQUEST),
@@ -91,6 +85,9 @@ public enum ErrorCode  {
 
 
 
+    //EMAIL
+    EMAIL_EXISTED("Email existed",5005,HttpStatus.BAD_REQUEST),
+
     // CART
     INVALID_QUANTITY("Quantity must be greater than zero",3002,HttpStatus.BAD_REQUEST),
     ITEM_NOT_FOUND("item not found",3003,HttpStatus.NOT_FOUND),
@@ -98,24 +95,27 @@ public enum ErrorCode  {
 
 
     //ORDER
-    CART_EMPTY("Cart is empty",4001,HttpStatus.BAD_REQUEST)
+    CART_EMPTY("Cart is empty",4001,HttpStatus.BAD_REQUEST),
 
+    //Body json
+    BODY_INVALID("Missing field in the request body.",6000,HttpStatus.BAD_REQUEST),
 
+    //ENUM
+    ENUM_INVALID("Invalid enum value.",7000,HttpStatus.BAD_REQUEST)
     ;
 
-    // các instance giờ là một object ErrorCode
-
-    int code;
-    String message;
-    HttpStatusCode statusCode;
+    final int code;
+    final String message;
+    final  HttpStatusCode statusCode;
 
 
-    //constructor
      ErrorCode(String message, int code, HttpStatusCode statusCode) {
         this.message = message;
         this.code = code;
         this.statusCode=statusCode;
     }
+
+
 
 
 

@@ -1,15 +1,17 @@
 package com.tihuz.ecommerce_backend.dto.response;
 
-
+import com.tihuz.ecommerce_backend.enums.BrandStatus;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-@Data
+@Getter
+@Setter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class BrandResponse {
+public class BrandResponse
+{
 
     String name;
     String slug;
@@ -17,7 +19,7 @@ public class BrandResponse {
 
     String description;
     Integer position;
-    Boolean status;
+    BrandStatus status;
 
 
 }

@@ -1,19 +1,21 @@
 package com.tihuz.ecommerce_backend.dto.request;
 
-
+import com.tihuz.ecommerce_backend.enums.BrandStatus;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-@Data
+@Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class BrandUpdateRequest {
+public class BrandUpdateRequest
+{
 
     String name;
     String description;
     String logo;
     Integer position;
-    Boolean status;
+    BrandStatus status;
 }

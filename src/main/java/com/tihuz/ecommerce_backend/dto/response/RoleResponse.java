@@ -5,15 +5,14 @@ import lombok.experimental.FieldDefaults;
 
 import java.util.Set;
 
-@Data
-//annotation tạo constructor
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
-//annotation tạo object nhanh hơn
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class RoleResponse {
-
+public class RoleResponse
+{
     String name;
     String description;
     Set<PermissionResponse> permissions=Set.of();

@@ -13,8 +13,8 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class ProductUpdateRequest {
-
+public class ProductUpdateRequest
+{
     String name;
 
     BigDecimal price;
@@ -24,5 +24,6 @@ public class ProductUpdateRequest {
     Integer quantity;
 
     Long categoryId;
+    Long brandId;
     ProductStatus status;
 }

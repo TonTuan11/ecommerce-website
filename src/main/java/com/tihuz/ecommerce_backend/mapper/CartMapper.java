@@ -6,12 +6,11 @@ import com.tihuz.ecommerce_backend.entity.Cart;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-// vì trong CartResponse nó có chứ List<CartItemResponse>
-// nên phải dùng uses= CartItemMapper.class để nó map sang
+//Use CartItemMapper to map the list inside CartResponse
 @Mapper(componentModel = "spring",uses = CartItemMapper.class)
 
-public interface CartMapper {
-
+public interface CartMapper
+{
     Cart toCart(CartCreationRequest request);
 
     @Mapping(source = "id", target = "cartId")

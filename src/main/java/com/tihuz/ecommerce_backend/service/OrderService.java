@@ -4,7 +4,6 @@
     import com.tihuz.ecommerce_backend.dto.response.OrderResponse;
     import com.tihuz.ecommerce_backend.entity.*;
     import com.tihuz.ecommerce_backend.enums.OrderStatus;
-    import com.tihuz.ecommerce_backend.enums.PaymentMethod;
     import com.tihuz.ecommerce_backend.exception.AppException;
     import com.tihuz.ecommerce_backend.exception.ErrorCode;
     import com.tihuz.ecommerce_backend.mapper.OrderMapper;
@@ -23,8 +22,8 @@
     @RequiredArgsConstructor
     @Transactional
     @FieldDefaults(level = AccessLevel.PRIVATE,makeFinal = true)
-    public class OrderService {
-
+    public class OrderService
+    {
         CartRepository cartRepository;
         OrderRepository orderRepository;
         OrderMapper orderMapper;
@@ -34,7 +33,7 @@
             Cart cart= cartRepository.findByUserId(userId)
                     .orElseThrow(()-> new AppException(ErrorCode.CART_NOT_FOUND));
 
-            // cart trống
+            // cart empty
             if( cart.getItems().isEmpty())
             {
                 throw  new AppException(ErrorCode.CART_EMPTY);
@@ -56,19 +55,14 @@
 
         public Order createOrder(String userId, OrderRequest request)
         {
-            Order order=new Order();
+            Order order=orderMapper.toOrder(request);
             order.setUserId(userId);
             order.setStatus(OrderStatus.PENDING);
-            order.setPaymentMethod(request.getPaymentMethod());
-            order.setRecipientName(request.getRecipientName());
-            order.setRecipientPhone(request.getRecipientPhone());
-            order.setShippingAddress(request.getShippingAddress());
             return order;
         }
 
 
         public void createOrderItem(Cart cart,Order order) {
-
 
             for (CartItem cartItem : cart.getItems())
             {

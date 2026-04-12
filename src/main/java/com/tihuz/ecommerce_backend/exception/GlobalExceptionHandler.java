@@ -1,198 +1,205 @@
 package com.tihuz.ecommerce_backend.exception;
 
-
-
 import com.tihuz.ecommerce_backend.dto.response.ApiResponse;
 import jakarta.persistence.TransactionRequiredException;
 import jakarta.validation.ConstraintViolation;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.orm.jpa.JpaSystemException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-
 import java.util.Map;
 import java.util.Objects;
 
-@Slf4j // để dùng log
-
-//Đánh dấu class này là nơi xử lý lỗi toàn cục cho tất cả controller trong ứng dụng.
-//Khi controller nào đó xảy ra lỗi (exception), Spring sẽ tìm class này để xử lý
-@ControllerAdvice
-public class GlobalExceptionHandler {
-
-    // Placeholder dùng trong message để thay giá trị thực từ annotation
+@Slf4j
+@ControllerAdvice    // Global exception handler for all controllers
+public class GlobalExceptionHandler
+{
+    // Message placeholder for annotation values
     private static final String MIN_ATTRIBUTE="min";
-
     private static final String MAX_ATTRIBUTE="max";
 
-    // khai báo để Spring biết đây là method xử lý lỗi kiểu RuntimeException
+    // RuntimeException
     @ExceptionHandler(value = RuntimeException.class)        //safety net
-    ResponseEntity<ApiResponse> handlerRuntimeException(RuntimeException exception) // khi có lỗi RuntimeException  method này được gọi
+    ResponseEntity<ApiResponse> handlerRuntimeException(RuntimeException exception)
     {
         log.error("Unexpected error: ", exception);
-//        ApiResponse apiResponse=new ApiResponse();
-//        apiResponse.setCode(ErrorCode.UNCATEGORIZED_EXCEPTION.getCode());
-//        apiResponse.setMessage(ErrorCode.UNCATEGORIZED_EXCEPTION.getMessage());
-
-
         ErrorCode errorCode=ErrorCode.UNCATEGORIZED_EXCEPTION;
-
         ApiResponse apiResponse= ApiResponse.builder()
-                .code((errorCode.getCode()))
-                .message(errorCode.getMessage())
-                .build();
-
+                                            .code((errorCode.getCode()))
+                                            .message(errorCode.getMessage())
+                                            .build();
         return  ResponseEntity
                 .status(errorCode.getStatusCode())
                 .body(apiResponse);
-
-
     }
 
-
-
+    // Business logic error
     @ExceptionHandler(value = AppException.class)
-    ResponseEntity<ApiResponse> handlerAppException(AppException exception) // khi có lỗi nghiệp vụ (business error) method này được gọi
+    ResponseEntity<ApiResponse> handlerAppException(AppException exception)
     {
         ErrorCode errorCode=exception.getErrorCode();
-
-
-//        ApiResponse apiResponse=new ApiResponse();
-//        apiResponse.setCode(errorCode.getCode());
-//        apiResponse.setMessage(errorCode.getMessage());
-
-
         ApiResponse apiResponse= ApiResponse.builder()
-                .code((errorCode.getCode()))
-                .message(errorCode.getMessage())
-                .result(ErrorContext.get())
-                .build();
+                                            .code((errorCode.getCode()))
+                                            .message(errorCode.getMessage())
+                                            .result(ErrorContext.get())
+                                            .build();
 
         return  ResponseEntity
                 .status(errorCode.getStatusCode())
                 .body(apiResponse);
-
     }
 
 
-
-    //khi có lỗi validate @Valid / @NotNull / @Size … ở DTO request thì Spring sẽ quăng ra MethodArgumentNotValidException
-    @ExceptionHandler(value =  MethodArgumentNotValidException.class)
+    //When validation fails (vd: @Valid, @NotNull, @Size) on a request DTO
+    @ExceptionHandler(value = MethodArgumentNotValidException.class)
     ResponseEntity<ApiResponse> handlingValidation(MethodArgumentNotValidException validException)
     {
+        // Get the message from the annotation (used as ErrorCode key)
+        String enumKey = validException.getFieldError().getDefaultMessage();
 
-        // Lấy default message của field lỗi đầu tiên, dùng làm key để map sang ErrorCode
-        String enumkey = validException.getFieldError().getDefaultMessage();  // (cái  đặt trong @NotBlank/@Size)
+        // Default error code if mapping fails
+        ErrorCode errorCode = ErrorCode.INVALID_KEY;
 
-        // Mặc định nếu không tìm thấy key
-        ErrorCode errorCode=ErrorCode.INVALID_KEY;
+        // Attributes from validation annotation (vd: min, max)
+        Map<String, Object> attributes = null;
 
-        // Map chứa attributes của annotation (ví dụ min, max...)
-        Map<String ,Object> attributes=null;
-
-        try {
-            // Ép enumKey thành ErrorCode (nếu tồn tại)
-                errorCode=   ErrorCode.valueOf(enumkey);
-
-            // Lấy lỗi đầu tiên, unwrap thành ConstraintViolation để truy cập attribute
-                var constrainViolation = validException
-                        .getBindingResult() //lấy kết quả binding (toàn bộ lỗi).
-                        .getAllErrors() //trả về list ObjectError (mỗi cái là một lỗi)
-                        .get(0) //lấy lỗi đầu tiên để xử lý (nếu có nhiều lỗi thì chỉ xử lý một).
-                        .unwrap(ConstraintViolation.class);    //lấy ra object chi tiết của constraint (ràng buộc)
-
-            // Lấy attributes từ constraint (ví dụ {"min":5,
-            //                                      "message":"..."})
-                attributes= constrainViolation.getConstraintDescriptor().getAttributes();
-
-               log.info(attributes.toString());
-        }catch (IllegalArgumentException e)
+        try
         {
+            // Map message key to ErrorCode enum
+            errorCode = ErrorCode.valueOf(enumKey);
 
-            // Bắt lỗi nếu enumKey không hợp lệ
-            // Giữ nguyên errorCode là INVALID_KEY
+            // Get first validation error and extract constraint details
+            var constraintViolation = validException
+                    .getBindingResult()
+                    .getAllErrors()
+                    .get(0)
+                    .unwrap(ConstraintViolation.class);
+
+            // Get the attributes from the annotation (vd: {min=5, max=10})
+            attributes = constraintViolation.getConstraintDescriptor().getAttributes();
 
         }
+        catch (IllegalArgumentException e)
+        {
+            // Ignore if enumKey is invalid → use default errorCode
+        }
 
-//        ApiResponse apiResponse=new ApiResponse();
-//        apiResponse.setCode(errorCode.getCode());
-//        apiResponse.setMessage(errorCode.getMessage());
-
-
-        // Trả về response 400 với code và message
+        // Build response with optional attribute substitution
         return ResponseEntity.badRequest()
-                .body(ApiResponse.builder()
-                        .code(errorCode.getCode())
-                        .message(Objects.nonNull(attributes) ?
-                                // Nếu có attributes, thay giá trị trong message
-                                mapAtribute(errorCode.getMessage(),attributes)
-                                : errorCode.getMessage())
-                        .build()
+                             .body( ApiResponse.builder()
+                                     .code(errorCode.getCode())
+                                     .message(Objects.nonNull(attributes)
+                                      ? mapAttribute(errorCode.getMessage(), attributes)
+                                      : errorCode.getMessage())
 
-        );
+                                    // .message(mapAttribute(errorCode.getMessage(),attributes))
+                                      .build()
+                                   );
     }
 
-
-    private String mapAtribute(String message, Map<String,Object> attributes)
+    private String mapAttribute(String message, Map<String,Object> attributes)
     {
-
-        // Lấy giá trị min từ attributes, ép về String
-//        String minValue=String.valueOf( attributes.get(MIN_ATTRIBUTE));
-//        String maxValue=String.valueOf( attributes.get(MAX_ATTRIBUTE));
-
-        // Thay {min} trong message bằng giá trị thực
-//        return message.replace("{"+MIN_ATTRIBUTE+"}", minValue);
-//        return message.replace("{"+MAX_ATTRIBUTE+"}", maxValue);
-
         String result = message;
-        if (attributes.containsKey(MIN_ATTRIBUTE)) {
+        if (attributes.containsKey(MIN_ATTRIBUTE))
+        {
             result = result.replace("{" + MIN_ATTRIBUTE + "}", String.valueOf(attributes.get(MIN_ATTRIBUTE)));
         }
 
-        if (attributes.containsKey(MAX_ATTRIBUTE)) {
+        if (attributes.containsKey(MAX_ATTRIBUTE))
+        {
             result = result.replace("{" + MAX_ATTRIBUTE + "}", String.valueOf(attributes.get(MAX_ATTRIBUTE)));
         }
-
         return result;
-
     }
 
-
-
-
-
-    //xử lý lỗi 403 Forbidden t
-    //không có quyền (role/authority) để truy cập tài nguyên.
-    @ExceptionHandler(value = TransactionRequiredException.class)
-    ResponseEntity<ApiResponse> handlingAccessDeniedException(TransactionRequiredException exception)
+    //Transaction
+    @ExceptionHandler({TransactionRequiredException.class, JpaSystemException.class, InvalidDataAccessApiUsageException.class})
+    ResponseEntity<ApiResponse> handleTransactionException(RuntimeException ex)
     {
-        ErrorCode errorCode=ErrorCode.UNAUTHORIZED;
+        ErrorCode errorCode = ErrorCode.TRANSACTION_EXCEPTION;
+        log.error("Transaction exception", ex);
+        return ResponseEntity.status(errorCode.getStatusCode())
+                             .body(ApiResponse.builder()
+                                    .code(errorCode.getCode())
+                                    .message(errorCode.getMessage())
+                                    .build());
+    }
+
+    // User not logged in
+    @ExceptionHandler(value = AuthenticationException.class)
+    ResponseEntity<ApiResponse> handlingAuthenticationException(AuthenticationException exception)
+    {
+        ErrorCode errorCode=ErrorCode.UNAUTHENTICATED;
 
         return  ResponseEntity.status(errorCode.getStatusCode())
-                .body(ApiResponse
-                        .builder()
-                        .code(errorCode.getCode())
-                        .message(errorCode.getMessage())
-                        .build()
-        );
+                              .body(ApiResponse
+                                    .builder()
+                                    .code(errorCode.getCode())
+                                    .message(errorCode.getMessage())
+                                    .build()
+                );
+    }
+
+    // Access denied
+    @ExceptionHandler(value = AccessDeniedException.class)
+    ResponseEntity<ApiResponse> handlingAccessDeniedException(AccessDeniedException exception)
+    {
+        ErrorCode errorCode=ErrorCode.UNAUTHORIZED;
+        return  ResponseEntity.status(errorCode.getStatusCode())
+                              .body(ApiResponse
+                                    .builder()
+                                    .code(errorCode.getCode())
+                                    .message(errorCode.getMessage())
+                                    .build()
+                            );
+
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    ResponseEntity<ApiResponse> handlingHttpMessageNotReadableException(HttpMessageNotReadableException exception)
+    {
+        Throwable cause=exception.getCause();
+        if (cause instanceof com.fasterxml.jackson.databind.exc.InvalidFormatException invalidFormat
+                && invalidFormat.getTargetType().isEnum())
+        {
+            ErrorCode errorCode = ErrorCode.ENUM_INVALID;
+            return ResponseEntity.status(errorCode.getStatusCode())
+                    .body(ApiResponse.builder()
+                            .code(errorCode.getCode())
+                            .message(errorCode.getMessage())
+                            .build());
+        }
+
+        else
+        {
+            ErrorCode errorCode = ErrorCode.BODY_INVALID;
+            return ResponseEntity.status(errorCode.getStatusCode())
+                    .body(ApiResponse.builder()
+                            .code(errorCode.getCode())
+                            .message(errorCode.getMessage())
+                            .build());
+        }
 
     }
 
 
-    // bắt lỗi @Transactional
-//    @ExceptionHandler(value = InvalidDataAccessApiUsageException.class)
-//    ResponseEntity<ApiResponse> handingTransactionRequest(InvalidDataAccessApiUsageException exception)
-//    {
-//        ErrorCode errorCode=ErrorCode.TRANSACTION_EXCEPTION;
+
+
+//    @ExceptionHandler(DataIntegrityViolationException.class)
+//    ResponseEntity<ApiResponse> handleDataIntegrity(DataIntegrityViolationException ex) {
+//        ErrorCode errorCode = ErrorCode.BODY_INVALID;
 //
 //        return ResponseEntity.status(errorCode.getStatusCode())
-//                .body(
-//                        ApiResponse.builder()
+//                .body(ApiResponse.builder()
 //                        .code(errorCode.getCode())
-//                        .message(errorCode.getMessage())
-//                        .build()
-//                );
+//                        .message("Missing required field (DB constraint)")
+//                        .build());
 //    }
 
 

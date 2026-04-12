@@ -87,11 +87,8 @@ public class BrandService {
     public void deleteBrand(String name)
     {
         Brand brand= brandRepository.findByName(name)
-                .orElseThrow(()-> new AppException(ErrorCode.BRAND_NOTEXISTED));
-
+                                    .orElseThrow(()-> new AppException(ErrorCode.BRAND_NOTEXISTED));
         brandRepository.deleteByName(name);
-
-
 
     }
 

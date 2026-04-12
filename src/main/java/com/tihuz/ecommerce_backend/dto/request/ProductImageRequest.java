@@ -1,11 +1,14 @@
 package com.tihuz.ecommerce_backend.dto.request;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
 @Setter
-public class ProductImageRequest {
+@NoArgsConstructor
+public class ProductImageRequest
+{
 
 String url;
 Boolean isThumbnail;

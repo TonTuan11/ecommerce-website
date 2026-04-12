@@ -1,11 +1,8 @@
 package com.tihuz.ecommerce_backend.entity;
 
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import lombok.experimental.FieldDefaults;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,8 +11,10 @@ import java.util.List;
 @Getter
 @Setter
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class Cart {
-
+@NoArgsConstructor
+@AllArgsConstructor
+public class Cart
+{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
@@ -24,8 +23,8 @@ public class Cart {
     @JoinColumn(name = "user_id",nullable = false,unique = true)
     User user;
 
-    // cascade = CascadeType.ALL, cha lưu thì các item con cũng lưu, xóa, cập nhật theo
-    //orphanRemoval = true khi xóa phần tử con thì xóa cả trong db
+    // cascade = CascadeType.ALL, Child entities are automatically created, updated, and deleted with the parent
+    //orphanRemoval = true, Delete child entities when removed
     @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL,orphanRemoval = true)
     List<CartItem> items= new ArrayList<>();
 }

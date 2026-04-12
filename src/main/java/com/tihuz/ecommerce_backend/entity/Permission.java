@@ -1,11 +1,10 @@
 package com.tihuz.ecommerce_backend.entity;
 
-
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-
 
 @Data
 @Builder
@@ -13,10 +12,10 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
-public class Permission {
-
+public class Permission
+{
     @Id
      String name;
-     String description;
 
+     String description;
 }

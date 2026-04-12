@@ -1,24 +1,23 @@
 package com.tihuz.ecommerce_backend.entity;
 
-
 import com.tihuz.ecommerce_backend.base.BaseEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-
 import java.time.LocalDate;
 import java.util.Set;
 
-
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
 @Table(name = "users")
-public class User extends BaseEntity {
+public class User extends BaseEntity
+{
 
     @Id
     @GeneratedValue( strategy = GenerationType.UUID )
@@ -42,9 +41,7 @@ public class User extends BaseEntity {
     @Column(nullable = false)
     LocalDate dob;
 
-
      @ManyToMany
      Set<Role> roles;
-
 
 }
